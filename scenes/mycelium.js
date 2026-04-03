@@ -1,194 +1,149 @@
-// Mycelium — bioluminescent network that grows, branches, and pulses
-let mycelNodes = [];
-let mycelSegments = [];
-let mycelPulses = [];
+// Mycelium — organic branching tendrils that creep, fork, and bloom
+let tendrils = [];
+let blooms = [];
+let haze = [];
 let mycelSpores = [];
-let growTimer = 0;
+let mycelGrowTimer = 0;
 
-const MAX_NODES = 80;
-const MAX_SEGMENTS = 200;
-const MAX_SPORES = 60;
+const MAX_TENDRILS = 40;
+const MAX_BLOOMS = 15;
+const TENDRIL_POINTS = 80;
 
 function initMycelium() {
-  mycelNodes = [];
-  mycelSegments = [];
-  mycelPulses = [];
+  tendrils = [];
+  blooms = [];
+  haze = [];
   mycelSpores = [];
-  growTimer = 0;
+  mycelGrowTimer = 0;
 
-  // Seed 3-5 initial root nodes
-  const seeds = 3 + Math.floor(Math.random() * 3);
+  // Seed initial tendrils from bottom/edges — like roots creeping in
+  const seeds = 4 + Math.floor(Math.random() * 3);
   for (let i = 0; i < seeds; i++) {
-    mycelNodes.push({
-      x: W * (0.2 + Math.random() * 0.6),
-      y: H * (0.2 + Math.random() * 0.6),
-      r: 3 + Math.random() * 4,
-      ci: i % 6,
-      energy: 1,
-      pulsePhase: Math.random() * TWO_PI,
-      connections: 0,
-      born: 0
-    });
+    spawnTendril(
+      Math.random() * W,
+      H * (0.7 + Math.random() * 0.3),
+      -Math.PI / 2 + (Math.random() - 0.5) * 1.2,
+      0
+    );
   }
 }
 
-function addNode(x, y, ci, parentIdx, t) {
-  if (mycelNodes.length >= MAX_NODES) return -1;
-  const idx = mycelNodes.length;
-  mycelNodes.push({
-    x: x,
-    y: y,
-    r: 1.5 + Math.random() * 2.5,
-    ci: ci,
-    energy: 0.5 + Math.random() * 0.5,
-    pulsePhase: Math.random() * TWO_PI,
-    connections: 0,
-    born: t
-  });
-  return idx;
-}
+function spawnTendril(x, y, angle, generation) {
+  if (tendrils.length >= MAX_TENDRILS) return;
+  const len = TENDRIL_POINTS - generation * 15;
+  if (len < 15) return;
 
-function addSegment(fromIdx, toIdx, ci, t) {
-  if (mycelSegments.length >= MAX_SEGMENTS) return;
-  const from = mycelNodes[fromIdx];
-  const to = mycelNodes[toIdx];
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-
-  // Generate curved control points for organic look
-  const mx = (from.x + to.x) / 2;
-  const my = (from.y + to.y) / 2;
-  const perpX = -dy / dist;
-  const perpY = dx / dist;
-  const bend = (Math.random() - 0.5) * dist * 0.4;
-
-  mycelSegments.push({
-    from: fromIdx,
-    to: toIdx,
-    cx: mx + perpX * bend,
-    cy: my + perpY * bend,
-    ci: ci,
-    life: 0,
-    maxLife: dist * 30 + 2000,
-    growProgress: 0,
-    dist: dist,
-    born: t
-  });
-
-  mycelNodes[fromIdx].connections++;
-  mycelNodes[toIdx].connections++;
-}
-
-function firePulse(segIdx, forward, t) {
-  mycelPulses.push({
-    seg: segIdx,
-    forward: forward,
-    progress: 0,
-    speed: 0.0004 + Math.random() * 0.0003,
-    born: t,
-    ci: mycelSegments[segIdx].ci
-  });
-}
-
-function spawnSpore(x, y, ci) {
-  if (mycelSpores.length >= MAX_SPORES) return;
-  mycelSpores.push({
-    x: x,
-    y: y,
-    vx: (Math.random() - 0.5) * 0.3,
-    vy: (Math.random() - 0.5) * 0.3,
-    sz: 0.5 + Math.random() * 1.5,
-    life: 0,
-    maxLife: 4000 + Math.random() * 6000,
-    ci: ci,
-    drift: Math.random() * TWO_PI,
-    driftSpeed: 0.001 + Math.random() * 0.002
+  tendrils.push({
+    points: [{ x, y }],
+    angle: angle,
+    targetLen: len,
+    speed: 0.03 + Math.random() * 0.02,
+    ci: Math.floor(Math.random() * 6),
+    thickness: Math.max(0.4, 2.5 - generation * 0.6),
+    generation: generation,
+    forked: false,
+    forkAt: 0.3 + Math.random() * 0.4,
+    wobble: Math.random() * 1000,
+    alive: true,
+    bloomSpawned: false
   });
 }
 
 function drawMycelium(t, dt) {
-  growTimer += dt;
+  mycelGrowTimer += dt;
 
-  // ── GROWTH PHASE ──
-  // Periodically attempt to grow new branches
-  if (growTimer > 400 / Math.max(0.3, M.speed) && mycelNodes.length < MAX_NODES) {
-    growTimer = 0;
+  // ── GROW TENDRILS ──
+  for (let i = 0; i < tendrils.length; i++) {
+    const td = tendrils[i];
+    if (!td.alive) continue;
+    if (td.points.length >= td.targetLen) {
+      td.alive = false;
+      // Spawn bloom at tip of mature tendrils
+      if (!td.bloomSpawned && td.generation < 2 && blooms.length < MAX_BLOOMS && Math.random() < 0.4) {
+        td.bloomSpawned = true;
+        const tip = td.points[td.points.length - 1];
+        blooms.push({
+          x: tip.x, y: tip.y,
+          r: 0, maxR: 8 + Math.random() * 12,
+          ci: td.ci,
+          phase: Math.random() * TWO_PI,
+          born: t,
+          pulseSpeed: 0.001 + Math.random() * 0.001
+        });
+      }
+      continue;
+    }
 
-    // Pick a random existing node to branch from
-    const parentIdx = Math.floor(Math.random() * mycelNodes.length);
-    const parent = mycelNodes[parentIdx];
+    // Grow by adding points
+    const growSteps = Math.max(1, Math.floor(td.speed * dt * M.speed));
+    for (let s = 0; s < growSteps && td.points.length < td.targetLen; s++) {
+      const last = td.points[td.points.length - 1];
 
-    // Don't over-branch from one node
-    if (parent.connections < 4) {
+      // Noise-driven angle wandering — organic, not straight
+      const noiseVal = noise2D(last.x * 0.005 + td.wobble, last.y * 0.005);
+      td.angle += noiseVal * 0.15;
+      // Gentle upward/inward bias
+      td.angle += (Math.atan2(H * 0.3 - last.y, W / 2 - last.x) - td.angle) * 0.008;
+
+      const step = 2 + Math.random() * 1.5;
+      const nx = last.x + Math.cos(td.angle) * step;
+      const ny = last.y + Math.sin(td.angle) * step;
+
+      // Stay in bounds
+      if (nx < 5 || nx > W - 5 || ny < 5 || ny > H - 5) {
+        td.alive = false;
+        break;
+      }
+
+      td.points.push({ x: nx, y: ny });
+
+      // Add haze at intervals
+      if (td.points.length % 8 === 0) {
+        haze.push({ x: nx, y: ny, r: 20 + Math.random() * 30, ci: td.ci });
+        if (haze.length > 120) haze.shift();
+      }
+
+      // Fork into sub-branches
+      const progress = td.points.length / td.targetLen;
+      if (!td.forked && progress > td.forkAt && td.generation < 3) {
+        td.forked = true;
+        const forkAngle1 = td.angle + 0.4 + Math.random() * 0.5;
+        const forkAngle2 = td.angle - 0.4 - Math.random() * 0.5;
+        spawnTendril(nx, ny, forkAngle1, td.generation + 1);
+        if (Math.random() < 0.6) {
+          spawnTendril(nx, ny, forkAngle2, td.generation + 1);
+        }
+      }
+    }
+  }
+
+  // Spawn new root tendrils periodically to keep it alive
+  if (mycelGrowTimer > 5000 && tendrils.filter(t2 => t2.alive).length < 3) {
+    mycelGrowTimer = 0;
+    spawnTendril(
+      Math.random() * W,
+      H * (0.6 + Math.random() * 0.4),
+      -Math.PI / 2 + (Math.random() - 0.5) * 1.5,
+      0
+    );
+  }
+
+  // ── SPAWN SPORES from blooms ──
+  for (let i = 0; i < blooms.length; i++) {
+    const b = blooms[i];
+    if (b.r < b.maxR) {
+      b.r += dt * 0.005;
+    }
+    if (Math.random() < 0.002 * M.speed && mycelSpores.length < 80) {
       const angle = Math.random() * TWO_PI;
-      const dist = 40 + Math.random() * 100;
-      const nx = parent.x + Math.cos(angle) * dist;
-      const ny = parent.y + Math.sin(angle) * dist;
-
-      // Keep within bounds with padding
-      if (nx > 30 && nx < W - 30 && ny > 30 && ny < H - 30) {
-        // Check not too close to existing nodes
-        let tooClose = false;
-        for (let i = 0; i < mycelNodes.length; i++) {
-          const dx = mycelNodes[i].x - nx;
-          const dy = mycelNodes[i].y - ny;
-          if (Math.sqrt(dx * dx + dy * dy) < 25) {
-            tooClose = true;
-            // Connect to existing node instead if not already connected
-            let alreadyConnected = false;
-            for (let s = 0; s < mycelSegments.length; s++) {
-              const seg = mycelSegments[s];
-              if ((seg.from === parentIdx && seg.to === i) ||
-                  (seg.from === i && seg.to === parentIdx)) {
-                alreadyConnected = true;
-                break;
-              }
-            }
-            if (!alreadyConnected && i !== parentIdx && parent.connections < 4) {
-              addSegment(parentIdx, i, parent.ci, t);
-            }
-            break;
-          }
-        }
-        if (!tooClose) {
-          const ci = Math.random() < 0.3 ? Math.floor(Math.random() * 6) : parent.ci;
-          const newIdx = addNode(nx, ny, ci, parentIdx, t);
-          if (newIdx >= 0) {
-            addSegment(parentIdx, newIdx, ci, t);
-          }
-        }
-      }
-    }
-  }
-
-  // ── UPDATE SEGMENTS ──
-  for (let i = 0; i < mycelSegments.length; i++) {
-    const seg = mycelSegments[i];
-    seg.life += dt;
-    // Grow in over time
-    if (seg.growProgress < 1) {
-      seg.growProgress = Math.min(1, seg.growProgress + dt * 0.002);
-    }
-    // Random pulse firing
-    if (Math.random() < 0.00015 * M.speed) {
-      firePulse(i, Math.random() < 0.5, t);
-    }
-  }
-
-  // ── UPDATE PULSES ──
-  for (let i = mycelPulses.length - 1; i >= 0; i--) {
-    const p = mycelPulses[i];
-    p.progress += p.speed * dt * M.speed;
-    if (p.progress >= 1) {
-      // Pulse arrived — energize target node and spawn spore
-      const seg = mycelSegments[p.seg];
-      const targetIdx = p.forward ? seg.to : seg.from;
-      if (targetIdx < mycelNodes.length) {
-        mycelNodes[targetIdx].energy = Math.min(1.5, mycelNodes[targetIdx].energy + 0.3);
-        spawnSpore(mycelNodes[targetIdx].x, mycelNodes[targetIdx].y, p.ci);
-      }
-      mycelPulses.splice(i, 1);
+      mycelSpores.push({
+        x: b.x, y: b.y,
+        vx: Math.cos(angle) * (0.1 + Math.random() * 0.2),
+        vy: -Math.random() * 0.4 - 0.1,
+        sz: 0.5 + Math.random() * 1.2,
+        life: 0, maxLife: 5000 + Math.random() * 5000,
+        ci: b.ci, drift: Math.random() * TWO_PI
+      });
     }
   }
 
@@ -196,121 +151,96 @@ function drawMycelium(t, dt) {
   for (let i = mycelSpores.length - 1; i >= 0; i--) {
     const sp = mycelSpores[i];
     sp.life += dt;
-    sp.drift += sp.driftSpeed * M.speed;
-    sp.vx += Math.sin(sp.drift) * 0.003;
-    sp.vy += Math.cos(sp.drift * 0.7) * 0.003;
-    sp.vx *= 0.995;
-    sp.vy *= 0.995;
+    sp.drift += 0.002 * M.speed;
+    sp.vx += Math.sin(sp.drift) * 0.002;
+    sp.vy -= 0.0001; // float upward
+    sp.vx *= 0.998;
+    sp.vy *= 0.998;
     sp.x += sp.vx * M.speed;
     sp.y += sp.vy * M.speed;
-    if (sp.life > sp.maxLife) {
-      mycelSpores.splice(i, 1);
-    }
+    if (sp.life > sp.maxLife) mycelSpores.splice(i, 1);
   }
 
-  // ── DRAW SEGMENTS ──
-  for (let i = 0; i < mycelSegments.length; i++) {
-    const seg = mycelSegments[i];
-    const from = mycelNodes[seg.from];
-    const to = mycelNodes[seg.to];
-    if (!from || !to) continue;
-
-    const c = _rcColors[seg.ci % 6];
-    const age = seg.life / seg.maxLife;
-    const fadeIn = Math.min(1, seg.growProgress * 2);
-    const alpha = fadeIn * (0.03 + 0.02 * Math.sin(t * 0.0003 + i));
-
-    // Draw growing tendril as quadratic curve
-    const gp = seg.growProgress;
-    // Parametric point on quadratic bezier at t=gp
-    const endX = (1 - gp) * (1 - gp) * from.x + 2 * (1 - gp) * gp * seg.cx + gp * gp * to.x;
-    const endY = (1 - gp) * (1 - gp) * from.y + 2 * (1 - gp) * gp * seg.cy + gp * gp * to.y;
-
-    // Main tendril
+  // ── DRAW GROUND HAZE ──
+  for (let i = 0; i < haze.length; i++) {
+    const h = haze[i];
+    const c = _rcColors[h.ci % 6];
+    const breath = 0.015 + 0.008 * Math.sin(t * 0.0002 + i * 0.7);
+    const grad = ctx.createRadialGradient(h.x, h.y, 0, h.x, h.y, h.r);
+    grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${breath})`);
+    grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
+    ctx.fillStyle = grad;
     ctx.beginPath();
-    ctx.moveTo(from.x, from.y);
-    if (gp >= 1) {
-      ctx.quadraticCurveTo(seg.cx, seg.cy, to.x, to.y);
-    } else {
-      // Partial curve — draw to current growth point
-      const midGp = gp * 0.5;
-      const midX = (1 - midGp) * (1 - midGp) * from.x + 2 * (1 - midGp) * midGp * seg.cx + midGp * midGp * to.x;
-      const midY = (1 - midGp) * (1 - midGp) * from.y + 2 * (1 - midGp) * midGp * seg.cy + midGp * midGp * to.y;
-      ctx.quadraticCurveTo(midX, midY, endX, endY);
-    }
-    ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
-
-    // Soft glow along tendril
-    ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha * 0.3})`;
-    ctx.lineWidth = 4;
-    ctx.stroke();
+    ctx.arc(h.x, h.y, h.r, 0, TWO_PI);
+    ctx.fill();
   }
 
-  // ── DRAW PULSES ──
+  // ── DRAW TENDRILS ──
+  for (let i = 0; i < tendrils.length; i++) {
+    const td = tendrils[i];
+    if (td.points.length < 2) continue;
+    const c = _rcColors[td.ci % 6];
+
+    // Draw as a smooth path with tapering thickness
+    ctx.beginPath();
+    ctx.moveTo(td.points[0].x, td.points[0].y);
+    for (let j = 1; j < td.points.length - 1; j++) {
+      const xc = (td.points[j].x + td.points[j + 1].x) / 2;
+      const yc = (td.points[j].y + td.points[j + 1].y) / 2;
+      ctx.quadraticCurveTo(td.points[j].x, td.points[j].y, xc, yc);
+    }
+    const last = td.points[td.points.length - 1];
+    ctx.lineTo(last.x, last.y);
+
+    // Pulsing brightness along the tendril
+    const pulse = 0.04 + 0.02 * Math.sin(t * 0.0004 + i * 1.3);
+    ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${pulse})`;
+    ctx.lineWidth = td.thickness;
+    ctx.stroke();
+
+    // Glow pass
+    ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${pulse * 0.3})`;
+    ctx.lineWidth = td.thickness * 4;
+    ctx.stroke();
+
+    // Growing tip glow
+    if (td.alive) {
+      const tip = td.points[td.points.length - 1];
+      const tipGlow = ctx.createRadialGradient(tip.x, tip.y, 0, tip.x, tip.y, 15);
+      tipGlow.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},0.2)`);
+      tipGlow.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
+      ctx.fillStyle = tipGlow;
+      ctx.beginPath();
+      ctx.arc(tip.x, tip.y, 15, 0, TWO_PI);
+      ctx.fill();
+    }
+  }
+
+  // ── DRAW BLOOMS ──
   ctx.globalCompositeOperation = 'screen';
-  for (let i = 0; i < mycelPulses.length; i++) {
-    const p = mycelPulses[i];
-    const seg = mycelSegments[p.seg];
-    if (!seg) continue;
-    const from = mycelNodes[p.forward ? seg.from : seg.to];
-    const to = mycelNodes[p.forward ? seg.to : seg.from];
-    if (!from || !to) continue;
+  for (let i = 0; i < blooms.length; i++) {
+    const b = blooms[i];
+    const c = _rcColors[b.ci % 6];
+    const pulse = 0.6 + 0.4 * Math.sin(t * b.pulseSpeed + b.phase);
+    const alpha = 0.06 * pulse;
 
-    const pt = p.progress;
-    // Position along the quadratic bezier
-    const cx = p.forward ? seg.cx : seg.cx;
-    const cy = p.forward ? seg.cy : seg.cy;
-    const px = (1 - pt) * (1 - pt) * from.x + 2 * (1 - pt) * pt * cx + pt * pt * to.x;
-    const py = (1 - pt) * (1 - pt) * from.y + 2 * (1 - pt) * pt * cy + pt * pt * to.y;
+    // Layered radial bloom
+    for (let ring = 0; ring < 3; ring++) {
+      const rr = b.r * (0.4 + ring * 0.35) * (0.9 + 0.1 * Math.sin(t * 0.001 + ring + i));
+      const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, rr);
+      grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${alpha * (1.5 - ring * 0.4)})`);
+      grad.addColorStop(0.5, `rgba(${c[0]},${c[1]},${c[2]},${alpha * (0.5 - ring * 0.15)})`);
+      grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, rr, 0, TWO_PI);
+      ctx.fill();
+    }
 
-    const c = _rcColors[p.ci % 6];
-    const intensity = Math.sin(pt * Math.PI); // Brightest in middle
-
-    // Pulse glow
-    const grad = ctx.createRadialGradient(px, py, 0, px, py, 12);
-    grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${intensity * 0.35})`);
-    grad.addColorStop(0.5, `rgba(${c[0]},${c[1]},${c[2]},${intensity * 0.1})`);
-    grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
-    ctx.fillStyle = grad;
+    // Bright center dot
     ctx.beginPath();
-    ctx.arc(px, py, 12, 0, TWO_PI);
-    ctx.fill();
-
-    // Bright core
-    ctx.beginPath();
-    ctx.arc(px, py, 2, 0, TWO_PI);
-    ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${intensity * 0.6})`;
-    ctx.fill();
-  }
-
-  // ── DRAW NODES ──
-  for (let i = 0; i < mycelNodes.length; i++) {
-    const node = mycelNodes[i];
-    const c = _rcColors[node.ci % 6];
-
-    // Decay energy over time
-    node.energy *= 0.997;
-
-    const pulse = 0.5 + 0.5 * Math.sin(t * 0.002 + node.pulsePhase);
-    const brightness = (0.08 + node.energy * 0.15) * (0.7 + pulse * 0.3);
-
-    // Outer glow
-    const glowR = node.r * (4 + node.energy * 3);
-    const grad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, glowR);
-    grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${brightness * 0.5})`);
-    grad.addColorStop(0.4, `rgba(${c[0]},${c[1]},${c[2]},${brightness * 0.15})`);
-    grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, glowR, 0, TWO_PI);
-    ctx.fill();
-
-    // Core
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, node.r * (0.8 + node.energy * 0.4), 0, TWO_PI);
-    ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${brightness * 0.7})`;
+    ctx.arc(b.x, b.y, 2 + Math.sin(t * b.pulseSpeed + b.phase) * 1, 0, TWO_PI);
+    ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.15 * pulse})`;
     ctx.fill();
   }
 
@@ -320,18 +250,17 @@ function drawMycelium(t, dt) {
     const sp = mycelSpores[i];
     const lr = sp.life / sp.maxLife;
     let alpha = lr < 0.1 ? lr / 0.1 : lr > 0.7 ? (1 - lr) / 0.3 : 1;
-    alpha *= 0.2 + 0.15 * Math.sin(t * 0.003 + i * 2);
+    alpha *= 0.25 + 0.15 * Math.sin(t * 0.003 + i * 2);
 
     ctx.beginPath();
     ctx.arc(sp.x, sp.y, sp.sz, 0, TWO_PI);
     ctx.fillStyle = `rgba(${pc[0]},${pc[1]},${pc[2]},${alpha})`;
     ctx.fill();
 
-    // Tiny glow
-    if (sp.sz > 1) {
+    if (sp.sz > 0.8) {
       ctx.beginPath();
       ctx.arc(sp.x, sp.y, sp.sz * 3, 0, TWO_PI);
-      ctx.fillStyle = `rgba(${pc[0]},${pc[1]},${pc[2]},${alpha * 0.15})`;
+      ctx.fillStyle = `rgba(${pc[0]},${pc[1]},${pc[2]},${alpha * 0.12})`;
       ctx.fill();
     }
   }
