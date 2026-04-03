@@ -71,3 +71,10 @@ document.querySelectorAll('.mood-btn').forEach(btn => {
     sendCastMessage({ mood: btn.dataset.mood });
   });
 });
+
+// Wrap toggleAutoMood to also sync to Chromecast
+const _origToggleAutoMood = toggleAutoMood;
+toggleAutoMood = function () {
+  _origToggleAutoMood();
+  sendCastMessage({ autoMood: autoMood });
+};
