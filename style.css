@@ -336,17 +336,18 @@ body.cast-receiver .title-overlay p { font-size: 1rem; }
   z-index: 30;
   display: flex; gap: 24px;
   align-items: center;
-  justify-content: center;
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
   scrollbar-width: none;
-  padding: 0 24px;
+  padding: 0 calc(50vw - 40px);
   opacity: 0;
   transition: opacity 0.5s ease;
   pointer-events: none;
 }
 .scene-bar::-webkit-scrollbar { display: none; }
+.scene-bar-item { flex-shrink: 0; }
 .scene-bar.visible { opacity: 1; }
 
 .scene-bar-item {
