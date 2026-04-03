@@ -1,5 +1,9 @@
 # Tripsitter
 
+<p align="center">
+  <img src="images/logo.jpg" width="100%" alt="Tripsitter">
+</p>
+
 **Immersive visual experiences for your screen and TV.**
 
 A browser-based visualizer that renders calming, psychedelic animations — perfect for meditation, relaxation, parties, or just zoning out. Cast it to your TV with Chromecast and let the visuals flow.
@@ -7,12 +11,7 @@ A browser-based visualizer that renders calming, psychedelic animations — perf
 **[Launch Tripsitter](https://johankladder.github.io/tripsitter/)**
 
 <p align="center">
-  <img src="screenshots/deep.jpg" width="49%" alt="Deep Ocean scene with neon mood">
-  <img src="screenshots/spiral.jpg" width="49%" alt="Spiral scene with neon mood">
-</p>
-<p align="center">
-  <img src="screenshots/liquid.jpg" width="49%" alt="Liquid scene with ember mood">
-  <img src="screenshots/fireflies.jpg" width="49%" alt="Fireflies scene with aurora mood">
+  <img src="images/preview.gif" width="100%" alt="Tripsitter preview showing deep ocean, mycelium, spiral, and liquid scenes">
 </p>
 
 ## Features
@@ -23,6 +22,15 @@ A browser-based visualizer that renders calming, psychedelic animations — perf
 - **Chromecast support** — Cast directly to your TV. The receiver is optimized for smooth playback on Cast hardware.
 - **Fullscreen** — One click for a distraction-free experience.
 - **Zero setup** — No installs, no accounts, no dependencies. Just open the link and go.
+
+<p align="center">
+  <img src="images/deep.jpg" width="49%" alt="Deep Ocean scene">
+  <img src="images/spiral.jpg" width="49%" alt="Spiral scene">
+</p>
+<p align="center">
+  <img src="images/liquid.jpg" width="49%" alt="Liquid scene">
+  <img src="images/fireflies.jpg" width="49%" alt="Fireflies scene">
+</p>
 
 ## How to use
 
