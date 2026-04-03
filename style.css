@@ -265,9 +265,6 @@ body.show-ui .panel { transform: translateY(0); opacity: 1; }
   animation: titlePulse 4s ease-in-out infinite 0.5s;
 }
 
-/* Sound toggle in toolbar */
-.sound-btn.active svg { color: rgba(255, 255, 255, 0.8); }
-
 @keyframes titlePulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
 
 /* ─── Casting mode (sender) ─── */
