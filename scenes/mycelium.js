@@ -19,13 +19,15 @@ function initMycelium() {
   mycelGrowTimer = 0;
   mycelCycleTimer = 0;
 
-  // Seed initial tendrils from bottom/edges — like roots creeping in
+  // Seed initial tendrils from center — radiating outward
   const seeds = 4 + Math.floor(Math.random() * 3);
+  const cx = W / 2, cy = H / 2;
   for (let i = 0; i < seeds; i++) {
+    const angle = (i / seeds) * TWO_PI + (Math.random() - 0.5) * 0.6;
     spawnTendril(
-      Math.random() * W,
-      H * (0.7 + Math.random() * 0.3),
-      -Math.PI / 2 + (Math.random() - 0.5) * 1.2,
+      cx + (Math.random() - 0.5) * 20,
+      cy + (Math.random() - 0.5) * 20,
+      angle,
       0
     );
   }

@@ -96,30 +96,48 @@ function setMood(index) {
   showMoodBar();
 }
 
-// Scene bar — build once, update active class
+// Scene icons (matching sender UI)
+const SCENE_ICONS = {
+  deep: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4" opacity="0.5"/>',
+  mandala: '<circle cx="12" cy="12" r="9"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"/><line x1="18.4" y1="5.6" x2="5.6" y2="18.4"/>',
+  cosmos: '<circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="6" cy="16" r="1" fill="currentColor" stroke="none"/><circle cx="18" cy="14" r="1.2" fill="currentColor" stroke="none"/><circle cx="14" cy="20" r="0.8" fill="currentColor" stroke="none"/><circle cx="8" cy="10" r="0.6" fill="currentColor" stroke="none"/><path d="M4 3l2 2M18 5l1.5 1.5" opacity="0.5"/>',
+  liquid: '<path d="M12 3c-4 6-7 9-7 13a7 7 0 0014 0c0-4-3-7-7-13z"/>',
+  waves: '<path d="M2 8c3-3 5-3 8 0s5 3 8 0M2 14c3-3 5-3 8 0s5 3 8 0M2 20c3-3 5-3 8 0s5 3 8 0"/>',
+  kaleido: '<polygon points="12,2 22,12 12,22 2,12"/><polygon points="12,6 18,12 12,18 6,12" opacity="0.5"/>',
+  fireflies: '<circle cx="6" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="11" cy="14" r="1.2" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="0.8" fill="currentColor" stroke="none"/><circle cx="8" cy="18" r="1" fill="currentColor" stroke="none"/><path d="M4 20v-4M10 20v-6M16 20v-3" opacity="0.3"/>',
+  spiral: '<path d="M12 12c0-2 2-4 4-4s4 2 4 4-2 6-6 6-8-4-8-8 4-10 10-10" fill="none"/>',
+  rain: '<line x1="6" y1="4" x2="6" y2="10"/><line x1="12" y1="2" x2="12" y2="8"/><line x1="18" y1="5" x2="18" y2="11"/><line x1="9" y1="10" x2="9" y2="16"/><line x1="15" y1="8" x2="15" y2="14"/><ellipse cx="9" cy="19" rx="3" ry="1" opacity="0.4"/>',
+  plasma: '<path d="M4 12c2-4 6-4 8 0s6 4 8 0" opacity="0.6"/><path d="M4 8c2 4 6 4 8 0s6-4 8 0" opacity="0.4"/><circle cx="12" cy="12" r="3" opacity="0.3"/>',
+  mycelium: '<circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="6" cy="7" r="1.5" fill="currentColor" stroke="none"/><circle cx="18" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="8" cy="18" r="1.5" fill="currentColor" stroke="none"/><circle cx="17" cy="17" r="1.5" fill="currentColor" stroke="none"/><line x1="12" y1="12" x2="6" y2="7" opacity="0.5"/><line x1="12" y1="12" x2="18" y2="8" opacity="0.5"/><line x1="12" y1="12" x2="8" y2="18" opacity="0.4"/><line x1="12" y1="12" x2="17" y2="17" opacity="0.4"/>',
+  threads: '<circle cx="4" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="20" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="6" cy="18" r="1.2" fill="currentColor" stroke="none"/><circle cx="18" cy="18" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="3" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="21" r="1.2" fill="currentColor" stroke="none"/><path d="M4 6Q12 14 20 6M6 18Q12 10 18 18M12 3Q6 12 12 21" fill="none" opacity="0.4"/>',
+};
+
+const SCENE_LABELS = {
+  deep: 'deep ocean', mandala: 'mandala', cosmos: 'cosmos', liquid: 'liquid',
+  waves: 'waves', kaleido: 'kaleidoscope', fireflies: 'fireflies', spiral: 'spiral',
+  rain: 'rain', plasma: 'plasma', mycelium: 'mycelium', threads: 'threads',
+};
+
+// Scene bar — floating carousel showing active + 2 neighbors
 const sceneBar = document.getElementById('sceneBar');
 let sceneBarTimeout;
-const sceneBarItems = [];
-
-sceneNames.forEach((name, i) => {
-  const item = document.createElement('div');
-  item.className = 'scene-bar-item' + (i === 0 ? ' active' : '');
-  item.textContent = name;
-  sceneBar.appendChild(item);
-  sceneBarItems.push(item);
-});
 
 function showSceneBar() {
-  for (let i = 0; i < sceneBarItems.length; i++) {
-    sceneBarItems[i].classList.toggle('active', i === sceneIndex);
+  sceneBar.innerHTML = '';
+  const total = sceneNames.length;
+  const VISIBLE = 2; // neighbors on each side
+  for (let offset = -VISIBLE; offset <= VISIBLE; offset++) {
+    const idx = ((sceneIndex + offset) % total + total) % total;
+    const name = sceneNames[idx];
+    const item = document.createElement('div');
+    const isActive = offset === 0;
+    const isNeighbor = Math.abs(offset) === 1;
+    item.className = 'scene-bar-item' + (isActive ? ' active' : '') + (isNeighbor ? ' neighbor' : '');
+    item.innerHTML = `<svg viewBox="0 0 24 24">${SCENE_ICONS[name]}</svg>` +
+                     `<span class="scene-bar-label">${SCENE_LABELS[name]}</span>`;
+    sceneBar.appendChild(item);
   }
   sceneBar.classList.add('visible');
-  // Defer scroll so the bar is visible and layout is settled
-  requestAnimationFrame(() => {
-    if (sceneBarItems[sceneIndex]) {
-      sceneBarItems[sceneIndex].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    }
-  });
   clearTimeout(sceneBarTimeout);
   sceneBarTimeout = setTimeout(() => sceneBar.classList.remove('visible'), 3000);
 }
