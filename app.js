@@ -315,6 +315,7 @@ if (cursorGlow) {
 // Auto-hide UI
 let uiTimeout;
 function showUI() {
+  if (!started) return;
   document.body.classList.add('show-ui');
   clearTimeout(uiTimeout);
   uiTimeout = setTimeout(() => document.body.classList.remove('show-ui'), 4000);
