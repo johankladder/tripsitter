@@ -95,22 +95,30 @@ function setMood(index) {
   showMoodBar();
 }
 
-// Scene bar
+// Scene bar — build once, update active class
 const sceneBar = document.getElementById('sceneBar');
 let sceneBarTimeout;
+const sceneBarItems = [];
+
+sceneNames.forEach((name, i) => {
+  const item = document.createElement('div');
+  item.className = 'scene-bar-item' + (i === 0 ? ' active' : '');
+  item.textContent = name;
+  sceneBar.appendChild(item);
+  sceneBarItems.push(item);
+});
 
 function showSceneBar() {
-  sceneBar.innerHTML = '';
-  sceneNames.forEach((name, i) => {
-    const item = document.createElement('div');
-    item.className = 'scene-bar-item' + (i === sceneIndex ? ' active' : '');
-    item.textContent = name;
-    sceneBar.appendChild(item);
-  });
-  // Scroll active item into view
-  const activeItem = sceneBar.querySelector('.active');
-  if (activeItem) activeItem.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  for (let i = 0; i < sceneBarItems.length; i++) {
+    sceneBarItems[i].classList.toggle('active', i === sceneIndex);
+  }
   sceneBar.classList.add('visible');
+  // Defer scroll so the bar is visible and layout is settled
+  requestAnimationFrame(() => {
+    if (sceneBarItems[sceneIndex]) {
+      sceneBarItems[sceneIndex].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  });
   clearTimeout(sceneBarTimeout);
   sceneBarTimeout = setTimeout(() => sceneBar.classList.remove('visible'), 3000);
 }
