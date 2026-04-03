@@ -51,13 +51,14 @@ function createFlow() {
 
 function drawDeep(t, dt) {
   // Flow lines
-  deepFlows.forEach(fl => {
+  for (let fi = 0; fi < deepFlows.length; fi++) {
+    const fl = deepFlows[fi];
     fl.life += dt;
     if (fl.life > fl.ml) Object.assign(fl, createFlow());
     const lr = fl.life / fl.ml;
     let al = lr < 0.2 ? lr / 0.2 : lr > 0.7 ? 1 - (lr - 0.7) / 0.3 : 1;
     al *= 0.04;
-    const [r, g, b] = M.colors[fl.ci];
+    const c = M.colors[fl.ci];
     ctx.beginPath();
     ctx.moveTo(fl.pts[0].x, fl.pts[0].y);
     for (let i = 1; i < fl.pts.length - 1; i++) {
@@ -67,14 +68,15 @@ function drawDeep(t, dt) {
       const oy = Math.cos(t * 0.00025 + i * 0.5) * 3;
       ctx.quadraticCurveTo(fl.pts[i].x + ox, fl.pts[i].y + oy, xc + ox, yc + oy);
     }
-    ctx.strokeStyle = `rgba(${r},${g},${b},${al})`;
+    ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${al})`;
     ctx.lineWidth = 1.5;
     ctx.stroke();
-  });
+  }
 
   // Blobs
   ctx.globalCompositeOperation = 'screen';
-  deepBlobs.forEach(bl => {
+  for (let bi = 0; bi < deepBlobs.length; bi++) {
+    const bl = deepBlobs[bi];
     const s = M.speed * 0.7;
     bl.x += bl.sx * s + Math.sin(t * 0.0002 + bl.nOff) * 0.12 * s;
     bl.y += bl.sy * s + Math.cos(t * 0.00018 + bl.nOff) * 0.12 * s;
@@ -98,18 +100,20 @@ function drawDeep(t, dt) {
       ctx.quadraticCurveTo(pts[i].x, pts[i].y, (pts[i].x + n.x) / 2, (pts[i].y + n.y) / 2);
     }
     ctx.closePath();
-    const [r, g, b] = M.colors[bl.ci];
+    const c = M.colors[bl.ci];
     const grad = ctx.createRadialGradient(bl.x, bl.y, 0, bl.x, bl.y, radius * 1.4);
-    grad.addColorStop(0, `rgba(${r},${g},${b},0.18)`);
-    grad.addColorStop(0.5, `rgba(${r},${g},${b},0.08)`);
-    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},0.18)`);
+    grad.addColorStop(0.5, `rgba(${c[0]},${c[1]},${c[2]},0.08)`);
+    grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
     ctx.fillStyle = grad;
     ctx.fill();
-  });
+  }
   ctx.globalCompositeOperation = 'source-over';
 
   // Particles
-  deepParticles.forEach(p => {
+  const pc = _rcParticle;
+  for (let pi = 0; pi < deepParticles.length; pi++) {
+    const p = deepParticles[pi];
     p.life += dt;
     const lr = p.life / p.ml;
     p.op = lr < 0.15 ? p.mop * (lr / 0.15) : lr > 0.8 ? p.mop * (1 - (lr - 0.8) / 0.2) : p.mop;
@@ -118,14 +122,13 @@ function drawDeep(t, dt) {
     p.x += (p.sx + Math.sin(p.drift) * 0.15) * M.speed;
     p.y += p.sy * M.speed;
     if (p.life > p.ml) { p.x = Math.random() * W; p.y = H + 20; p.life = 0; }
-    const [r, g, b] = _rcParticle;
     ctx.beginPath(); ctx.arc(p.x, p.y, p.sz, 0, TWO_PI);
-    ctx.fillStyle = `rgba(${r},${g},${b},${p.op})`; ctx.fill();
+    ctx.fillStyle = `rgba(${pc[0]},${pc[1]},${pc[2]},${p.op})`; ctx.fill();
     if (p.sz > 1.5) {
       ctx.beginPath(); ctx.arc(p.x, p.y, p.sz * 4, 0, TWO_PI);
-      ctx.fillStyle = `rgba(${r},${g},${b},${p.op * 0.1})`; ctx.fill();
+      ctx.fillStyle = `rgba(${pc[0]},${pc[1]},${pc[2]},${p.op * 0.1})`; ctx.fill();
     }
-  });
+  }
 }
 
 SCENES.deep = { init: initDeep, draw: drawDeep };

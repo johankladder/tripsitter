@@ -15,7 +15,8 @@ function initLiquid() {
 }
 
 function drawLiquid(t, dt) {
-  metaballs.forEach(mb => {
+  for (let i = 0; i < metaballs.length; i++) {
+    const mb = metaballs[i];
     mb.vy += Math.sin(t * 0.0003 + mb.phase) * 0.002;
     mb.x += mb.vx * M.speed;
     mb.y += mb.vy * M.speed;
@@ -24,13 +25,15 @@ function drawLiquid(t, dt) {
     if (mb.y < mb.r) { mb.y = mb.r; mb.vy *= -0.8; }
     if (mb.y > H - mb.r) { mb.y = H - mb.r; mb.vy *= -0.8; }
     mb.currentR = mb.r * (1 + 0.2 * Math.sin(t * 0.0005 + mb.phase));
-  });
+  }
 
   ctx.globalCompositeOperation = 'screen';
+  const _passAlpha = [0.15, 0.06, 0.025];
   for (let pass = 0; pass < 3; pass++) {
     const scale = 1 + pass * 0.6;
-    const alpha = [0.15, 0.06, 0.025][pass];
-    metaballs.forEach(mb => {
+    const alpha = _passAlpha[pass];
+    for (let i = 0; i < metaballs.length; i++) {
+      const mb = metaballs[i];
       const c = _rcColors[mb.ci];
       const grad = ctx.createRadialGradient(mb.x, mb.y, 0, mb.x, mb.y, mb.currentR * scale);
       grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${alpha})`);
@@ -38,7 +41,7 @@ function drawLiquid(t, dt) {
       grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
       ctx.fillStyle = grad;
       ctx.beginPath(); ctx.arc(mb.x, mb.y, mb.currentR * scale, 0, TWO_PI); ctx.fill();
-    });
+    }
   }
 
   // Bridges between close metaballs

@@ -159,12 +159,12 @@ function drawMycelium(t, dt) {
     }
   }
 
-  // Fade out and remove dead tendrils
+  // Fade out and remove dead tendrils (swap-and-pop to avoid shifting)
   for (let i = tendrils.length - 1; i >= 0; i--) {
     const td = tendrils[i];
     if (td.fading) {
       td.opacity -= dt * 0.0002;
-      if (td.opacity <= 0) tendrils.splice(i, 1);
+      if (td.opacity <= 0) { tendrils[i] = tendrils[tendrils.length - 1]; tendrils.pop(); }
     }
   }
 
@@ -172,14 +172,14 @@ function drawMycelium(t, dt) {
   for (let i = blooms.length - 1; i >= 0; i--) {
     if (blooms[i].fading) {
       blooms[i].opacity = (blooms[i].opacity || 1) - dt * 0.0003;
-      if (blooms[i].opacity <= 0) blooms.splice(i, 1);
+      if (blooms[i].opacity <= 0) { blooms[i] = blooms[blooms.length - 1]; blooms.pop(); }
     }
   }
 
   // Fade old haze
   for (let i = haze.length - 1; i >= 0; i--) {
     haze[i].opacity = (haze[i].opacity || 1) - dt * 0.00005;
-    if (haze[i].opacity <= 0) haze.splice(i, 1);
+    if (haze[i].opacity <= 0) { haze[i] = haze[haze.length - 1]; haze.pop(); }
   }
 
   // ── SPAWN SPORES from blooms ──
@@ -212,7 +212,7 @@ function drawMycelium(t, dt) {
     sp.vy *= 0.998;
     sp.x += sp.vx * M.speed;
     sp.y += sp.vy * M.speed;
-    if (sp.life > sp.maxLife) mycelSpores.splice(i, 1);
+    if (sp.life > sp.maxLife) { mycelSpores[i] = mycelSpores[mycelSpores.length - 1]; mycelSpores.pop(); }
   }
 
   // ── DRAW GROUND HAZE ──

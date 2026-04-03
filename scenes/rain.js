@@ -19,14 +19,15 @@ const _layerAlphas = [0.5, 0.8, 1];
 function drawRain(t, dt) {
   // Rain streaks
   const pc = _rcParticle;
-  raindrops.forEach(d => {
+  const windX = Math.sin(t * 0.0002) * 2;
+  for (let i = 0; i < raindrops.length; i++) {
+    const d = raindrops[i];
     const layerSpeed = _layerSpeeds[d.layer];
     const layerAlpha = _layerAlphas[d.layer];
     d.y += d.speed * layerSpeed * M.speed;
     d.x += Math.sin(t * 0.0002 + d.x * 0.01) * 0.3;
 
     if (d.y > H) {
-      // Spawn ripple
       if (Math.random() < 0.3) {
         ripples.push({
           x: d.x, y: H * (0.7 + Math.random() * 0.3),
@@ -42,15 +43,17 @@ function drawRain(t, dt) {
     const alpha = d.opacity * layerAlpha;
     ctx.beginPath();
     ctx.moveTo(d.x, d.y);
-    ctx.lineTo(d.x + Math.sin(t * 0.0002) * 2, d.y + d.len * layerSpeed);
+    ctx.lineTo(d.x + windX, d.y + d.len * layerSpeed);
     ctx.strokeStyle = `rgba(${pc[0]},${pc[1]},${pc[2]},${alpha})`;
     ctx.lineWidth = d.layer === 2 ? 1.5 : 0.8;
     ctx.stroke();
-  });
+  }
 
   // Ripples
-  ripples.forEach(r => {
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    const r = ripples[i];
     r.life += dt;
+    if (r.life >= r.maxLife) { ripples.splice(i, 1); continue; }
     const progress = r.life / r.maxLife;
     r.r = r.maxR * progress;
     const alpha = (1 - progress) * 0.12;
@@ -61,8 +64,7 @@ function drawRain(t, dt) {
     ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
     ctx.lineWidth = 1;
     ctx.stroke();
-  });
-  ripples = ripples.filter(r => r.life < r.maxLife);
+  }
 
   // Ambient mist
   for (let i = 0; i < 5; i++) {

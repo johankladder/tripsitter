@@ -76,6 +76,8 @@ function lerpC(a, b, t) {
 const _rc = [0, 0, 0];
 const _rcColors = Array.from({ length: 6 }, () => [0, 0, 0]);
 const _rcParticle = [0, 0, 0];
+let _bgFillStyle = '';
+let _bgR = -1, _bgG = -1, _bgB = -1;
 
 function cacheRoundedColors() {
   for (let i = 0; i < 6; i++) {
@@ -115,10 +117,14 @@ function resize() {
   canvas.style.height = H + 'px';
 }
 resize();
+let _resizeTimer = 0;
 window.addEventListener('resize', () => {
-  canvas.width = 0;
-  resize();
-  initCurrentScene();
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    canvas.width = 0;
+    resize();
+    initCurrentScene();
+  }, 150);
 });
 
 // ══════════════════════════════════════════════════════
@@ -198,6 +204,8 @@ const AUTO_MOOD_INTERVAL = 30000;
 const AUTO_SCENE_INTERVAL = 90000;
 const moodKeys = Object.keys(MOODS);
 const sceneKeys = ['deep', 'mandala', 'cosmos', 'liquid', 'waves', 'kaleido', 'fireflies', 'spiral', 'rain', 'plasma', 'mycelium', 'threads'];
+const _moodBtns = document.querySelectorAll('.mood-btn');
+const _sceneBtns = document.querySelectorAll('.scene-btn');
 
 function pickRandom(arr, exclude) {
   let pick;
@@ -224,7 +232,7 @@ function updateAutoMood(dt) {
     const name = pickRandom(moodKeys, currentMood);
     targetMood = MOODS[name];
     currentMood = name;
-    document.querySelectorAll('.mood-btn').forEach(b => {
+    _moodBtns.forEach(b => {
       b.classList.toggle('active', b.dataset.mood === name);
     });
   }
@@ -234,7 +242,7 @@ function updateAutoMood(dt) {
     autoSceneTimer = 0;
     const sceneName = pickRandom(sceneKeys, currentScene);
     switchScene(sceneName);
-    document.querySelectorAll('.scene-btn').forEach(b => {
+    _sceneBtns.forEach(b => {
       b.classList.toggle('active', b.dataset.scene === sceneName);
     });
   }
@@ -255,9 +263,13 @@ function animate(timestamp) {
   cacheRoundedColors();
   updateAutoMood(dt);
 
-  // Background
-  const [br, bg, bb] = M.bg;
-  ctx.fillStyle = `rgb(${Math.round(br)},${Math.round(bg)},${Math.round(bb)})`;
+  // Background — only rebuild fillStyle string when color actually changes
+  const br = M.bg[0] | 0, bg2 = M.bg[1] | 0, bb = M.bg[2] | 0;
+  if (br !== _bgR || bg2 !== _bgG || bb !== _bgB) {
+    _bgR = br; _bgG = bg2; _bgB = bb;
+    _bgFillStyle = `rgb(${br},${bg2},${bb})`;
+  }
+  ctx.fillStyle = _bgFillStyle;
   ctx.fillRect(0, 0, W, H);
 
   // Scene crossfade
@@ -311,18 +323,18 @@ document.addEventListener('mousemove', showUI);
 document.addEventListener('touchstart', showUI);
 
 // Mood buttons
-document.querySelectorAll('.mood-btn').forEach(btn => {
+_moodBtns.forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+    _moodBtns.forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     targetMood = MOODS[btn.dataset.mood];
   });
 });
 
 // Scene buttons
-document.querySelectorAll('.scene-btn').forEach(btn => {
+_sceneBtns.forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+    _sceneBtns.forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     switchScene(btn.dataset.scene);
   });

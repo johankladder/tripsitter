@@ -68,15 +68,16 @@ function drawThreads(t, dt) {
     a.y = baseY + wobY;
   }
 
-  // ── FIND THREAD PAIRS ──
+  // ── FIND THREAD PAIRS ── (squared distance check, only sqrt for kept pairs)
   threadCache.length = 0;
+  const maxDistSq = MAX_THREAD_DIST * MAX_THREAD_DIST;
   for (let i = 0; i < anchors.length; i++) {
     for (let j = i + 1; j < anchors.length; j++) {
       const a = anchors[i], b = anchors[j];
       const dx = b.x - a.x, dy = b.y - a.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < MAX_THREAD_DIST && dist > 10) {
-        threadCache.push({ i, j, dist });
+      const distSq = dx * dx + dy * dy;
+      if (distSq < maxDistSq && distSq > 100) {
+        threadCache.push({ i, j, dist: Math.sqrt(distSq) });
       }
     }
   }

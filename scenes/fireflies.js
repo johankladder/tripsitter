@@ -18,7 +18,8 @@ function initFireflies() {
 
 function drawFireflies(t, dt) {
   ctx.globalCompositeOperation = 'screen';
-  fireflies.forEach(f => {
+  for (let i = 0; i < fireflies.length; i++) {
+    const f = fireflies[i];
     f.drift += 0.002 * M.speed;
     f.vx += Math.sin(f.drift) * 0.005;
     f.vy += Math.cos(f.drift * 0.7) * 0.005;
@@ -58,7 +59,7 @@ function drawFireflies(t, dt) {
     ctx.beginPath(); ctx.arc(f.x, f.y, f.sz, 0, TWO_PI);
     ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${brightness * 0.8})`;
     ctx.fill();
-  });
+  }
   ctx.globalCompositeOperation = 'source-over';
 }
 
