@@ -197,7 +197,7 @@ let autoSceneTimer = 0;
 const AUTO_MOOD_INTERVAL = 30000;
 const AUTO_SCENE_INTERVAL = 90000;
 const moodKeys = Object.keys(MOODS);
-const sceneKeys = ['deep', 'mandala', 'cosmos', 'liquid', 'waves', 'kaleido', 'fireflies', 'spiral', 'rain', 'plasma', 'mycelium'];
+const sceneKeys = ['deep', 'mandala', 'cosmos', 'liquid', 'waves', 'kaleido', 'fireflies', 'spiral', 'rain', 'plasma', 'mycelium', 'threads'];
 
 function pickRandom(arr, exclude) {
   let pick;
