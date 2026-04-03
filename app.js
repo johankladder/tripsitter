@@ -193,18 +193,22 @@ function switchScene(name) {
 // ══════════════════════════════════════════════════════
 let autoMood = false;
 let autoMoodTimer = 0;
+let autoSceneTimer = 0;
 const AUTO_MOOD_INTERVAL = 30000;
+const AUTO_SCENE_INTERVAL = 90000;
 const moodKeys = Object.keys(MOODS);
-let autoMoodIndex = 0;
 const sceneKeys = ['deep', 'mandala', 'cosmos', 'liquid', 'waves', 'kaleido', 'fireflies', 'spiral', 'rain', 'plasma', 'mycelium'];
-let autoSceneIndex = 0;
-let autoMoodCycles = 0;
-const SCENE_CHANGE_EVERY = 3; // Switch scene every N mood changes
+
+function pickRandom(arr, exclude) {
+  let pick;
+  do { pick = arr[Math.floor(Math.random() * arr.length)]; } while (pick === exclude && arr.length > 1);
+  return pick;
+}
 
 function toggleAutoMood() {
   autoMood = !autoMood;
   autoMoodTimer = 0;
-  autoMoodCycles = 0;
+  autoSceneTimer = 0;
   const btn = document.getElementById('autoMoodBtn');
   if (btn) btn.classList.toggle('active', autoMood);
 }
@@ -212,29 +216,27 @@ function toggleAutoMood() {
 function updateAutoMood(dt) {
   if (!autoMood) return;
   autoMoodTimer += dt;
+  autoSceneTimer += dt;
+
+  // Random mood change
   if (autoMoodTimer >= AUTO_MOOD_INTERVAL) {
     autoMoodTimer = 0;
-
-    // Cycle mood
-    autoMoodIndex = (autoMoodIndex + 1) % moodKeys.length;
-    const name = moodKeys[autoMoodIndex];
+    const name = pickRandom(moodKeys, currentMood);
     targetMood = MOODS[name];
     currentMood = name;
     document.querySelectorAll('.mood-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.mood === name);
     });
+  }
 
-    // Cycle scene every N mood changes
-    autoMoodCycles++;
-    if (autoMoodCycles >= SCENE_CHANGE_EVERY) {
-      autoMoodCycles = 0;
-      autoSceneIndex = (autoSceneIndex + 1) % sceneKeys.length;
-      const sceneName = sceneKeys[autoSceneIndex];
-      switchScene(sceneName);
-      document.querySelectorAll('.scene-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.scene === sceneName);
-      });
-    }
+  // Random scene change
+  if (autoSceneTimer >= AUTO_SCENE_INTERVAL) {
+    autoSceneTimer = 0;
+    const sceneName = pickRandom(sceneKeys, currentScene);
+    switchScene(sceneName);
+    document.querySelectorAll('.scene-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.scene === sceneName);
+    });
   }
 }
 
