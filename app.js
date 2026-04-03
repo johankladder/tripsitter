@@ -243,7 +243,7 @@ function updateAutoMood(dt) {
 // ══════════════════════════════════════════════════════
 // MAIN LOOP
 // ══════════════════════════════════════════════════════
-let lastTime = 0, globalTime = 0, started = false;
+let lastTime = 0, globalTime = 0, started = false, sceneInitPending = false;
 
 function animate(timestamp) {
   if (!lastTime) lastTime = timestamp;
@@ -266,10 +266,14 @@ function animate(timestamp) {
     if (sceneAlpha <= 0) {
       sceneAlpha = 0;
       currentScene = nextScene;
-      SCENES[currentScene].init();
       fadingOut = false;
       nextScene = null;
+      // Defer heavy init so it doesn't block scroll animations
+      sceneInitPending = true;
     }
+  } else if (sceneInitPending) {
+    SCENES[currentScene].init();
+    sceneInitPending = false;
   } else if (sceneAlpha < 1) {
     sceneAlpha += dt * 0.002;
     if (sceneAlpha > 1) sceneAlpha = 1;
