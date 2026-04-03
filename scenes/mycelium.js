@@ -4,10 +4,12 @@ let blooms = [];
 let haze = [];
 let mycelSpores = [];
 let mycelGrowTimer = 0;
+let mycelCycleTimer = 0;
 
 const MAX_TENDRILS = 40;
 const MAX_BLOOMS = 15;
 const TENDRIL_POINTS = 80;
+const CYCLE_INTERVAL = 15000; // New growth wave every 15s
 
 function initMycelium() {
   tendrils = [];
@@ -15,6 +17,7 @@ function initMycelium() {
   haze = [];
   mycelSpores = [];
   mycelGrowTimer = 0;
+  mycelCycleTimer = 0;
 
   // Seed initial tendrils from bottom/edges — like roots creeping in
   const seeds = 4 + Math.floor(Math.random() * 3);
@@ -45,7 +48,9 @@ function spawnTendril(x, y, angle, generation) {
     forkAt: 0.3 + Math.random() * 0.4,
     wobble: Math.random() * 1000,
     alive: true,
-    bloomSpawned: false
+    bloomSpawned: false,
+    opacity: 1,
+    fading: false
   });
 }
 
@@ -117,15 +122,64 @@ function drawMycelium(t, dt) {
     }
   }
 
-  // Spawn new root tendrils periodically to keep it alive
-  if (mycelGrowTimer > 5000 && tendrils.filter(t2 => t2.alive).length < 3) {
-    mycelGrowTimer = 0;
-    spawnTendril(
-      Math.random() * W,
-      H * (0.6 + Math.random() * 0.4),
-      -Math.PI / 2 + (Math.random() - 0.5) * 1.5,
-      0
-    );
+  // ── LIFECYCLE: fade old growth and spawn new waves ──
+  mycelCycleTimer += dt;
+
+  // Start fading old tendrils after a cycle
+  if (mycelCycleTimer >= CYCLE_INTERVAL) {
+    mycelCycleTimer = 0;
+    // Mark all finished tendrils as fading
+    for (let i = 0; i < tendrils.length; i++) {
+      if (!tendrils[i].alive) tendrils[i].fading = true;
+    }
+    // Mark old blooms as fading
+    for (let i = 0; i < blooms.length; i++) {
+      blooms[i].fading = true;
+    }
+    // Spawn a fresh wave of roots
+    const newRoots = 2 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < newRoots; i++) {
+      // Spawn from random edges
+      const edge = Math.random();
+      let sx, sy, sa;
+      if (edge < 0.4) {
+        sx = Math.random() * W; sy = H * (0.7 + Math.random() * 0.3);
+        sa = -Math.PI / 2 + (Math.random() - 0.5) * 1.2;
+      } else if (edge < 0.6) {
+        sx = Math.random() * W; sy = Math.random() * H * 0.3;
+        sa = Math.PI / 2 + (Math.random() - 0.5) * 1.2;
+      } else if (edge < 0.8) {
+        sx = Math.random() * W * 0.2; sy = Math.random() * H;
+        sa = (Math.random() - 0.5) * 1.2;
+      } else {
+        sx = W * (0.8 + Math.random() * 0.2); sy = Math.random() * H;
+        sa = Math.PI + (Math.random() - 0.5) * 1.2;
+      }
+      spawnTendril(sx, sy, sa, 0);
+    }
+  }
+
+  // Fade out and remove dead tendrils
+  for (let i = tendrils.length - 1; i >= 0; i--) {
+    const td = tendrils[i];
+    if (td.fading) {
+      td.opacity -= dt * 0.0002;
+      if (td.opacity <= 0) tendrils.splice(i, 1);
+    }
+  }
+
+  // Fade out and remove old blooms
+  for (let i = blooms.length - 1; i >= 0; i--) {
+    if (blooms[i].fading) {
+      blooms[i].opacity = (blooms[i].opacity || 1) - dt * 0.0003;
+      if (blooms[i].opacity <= 0) blooms.splice(i, 1);
+    }
+  }
+
+  // Fade old haze
+  for (let i = haze.length - 1; i >= 0; i--) {
+    haze[i].opacity = (haze[i].opacity || 1) - dt * 0.00005;
+    if (haze[i].opacity <= 0) haze.splice(i, 1);
   }
 
   // ── SPAWN SPORES from blooms ──
@@ -165,7 +219,8 @@ function drawMycelium(t, dt) {
   for (let i = 0; i < haze.length; i++) {
     const h = haze[i];
     const c = _rcColors[h.ci % 6];
-    const breath = 0.015 + 0.008 * Math.sin(t * 0.0002 + i * 0.7);
+    const hazeOp = h.opacity || 1;
+    const breath = (0.015 + 0.008 * Math.sin(t * 0.0002 + i * 0.7)) * hazeOp;
     const grad = ctx.createRadialGradient(h.x, h.y, 0, h.x, h.y, h.r);
     grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${breath})`);
     grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
@@ -193,7 +248,7 @@ function drawMycelium(t, dt) {
     ctx.lineTo(last.x, last.y);
 
     // Pulsing brightness along the tendril
-    const pulse = 0.04 + 0.02 * Math.sin(t * 0.0004 + i * 1.3);
+    const pulse = (0.04 + 0.02 * Math.sin(t * 0.0004 + i * 1.3)) * td.opacity;
     ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${pulse})`;
     ctx.lineWidth = td.thickness;
     ctx.stroke();
@@ -221,8 +276,9 @@ function drawMycelium(t, dt) {
   for (let i = 0; i < blooms.length; i++) {
     const b = blooms[i];
     const c = _rcColors[b.ci % 6];
+    const bloomOp = b.opacity || 1;
     const pulse = 0.6 + 0.4 * Math.sin(t * b.pulseSpeed + b.phase);
-    const alpha = 0.06 * pulse;
+    const alpha = 0.06 * pulse * bloomOp;
 
     // Layered radial bloom
     for (let ring = 0; ring < 3; ring++) {
@@ -240,7 +296,7 @@ function drawMycelium(t, dt) {
     // Bright center dot
     ctx.beginPath();
     ctx.arc(b.x, b.y, 2 + Math.sin(t * b.pulseSpeed + b.phase) * 1, 0, TWO_PI);
-    ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.15 * pulse})`;
+    ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.15 * pulse * bloomOp})`;
     ctx.fill();
   }
 
