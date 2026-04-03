@@ -107,6 +107,9 @@ function showSceneBar() {
     item.textContent = name;
     sceneBar.appendChild(item);
   });
+  // Scroll active item into view
+  const activeItem = sceneBar.querySelector('.active');
+  if (activeItem) activeItem.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   sceneBar.classList.add('visible');
   clearTimeout(sceneBarTimeout);
   sceneBarTimeout = setTimeout(() => sceneBar.classList.remove('visible'), 3000);

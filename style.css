@@ -332,15 +332,21 @@ body.cast-receiver .title-overlay p { font-size: 1rem; }
 
 .scene-bar {
   position: fixed;
-  top: 40px; left: 50%;
-  transform: translateX(-50%);
+  top: 40px; left: 0; right: 0;
   z-index: 30;
   display: flex; gap: 24px;
   align-items: center;
+  justify-content: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 0 24px;
   opacity: 0;
   transition: opacity 0.5s ease;
   pointer-events: none;
 }
+.scene-bar::-webkit-scrollbar { display: none; }
 .scene-bar.visible { opacity: 1; }
 
 .scene-bar-item {
