@@ -245,55 +245,30 @@ body.show-ui .panel { transform: translateY(0); opacity: 1; }
   width: 100%; height: 100%; z-index: 50;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  background: transparent;
+  background: rgba(5, 5, 16, 0.8);
   transition: opacity 2s ease; cursor: pointer;
 }
 .title-overlay.hidden { opacity: 0; pointer-events: none; }
 
-.splash-canvas {
-  position: absolute; top: 0; left: 0;
-  width: 100%; height: 100%;
-}
-
-.splash-content {
-  position: relative; z-index: 1;
-  display: flex; flex-direction: column;
-  align-items: center;
-}
-
 .title-overlay h1 {
   font-family: 'Cormorant Garamond', serif;
   font-weight: 300; font-size: clamp(2.5rem, 6vw, 5rem);
-  color: rgba(255, 255, 255, 0);
-  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.7); letter-spacing: 0.12em;
   margin-bottom: 1rem;
-  transition: color 2s ease, text-shadow 2s ease;
-}
-.title-overlay h1.revealed {
-  color: rgba(255, 255, 255, 0.85);
-  text-shadow: 0 0 40px rgba(120, 80, 255, 0.3), 0 0 80px rgba(60, 200, 160, 0.15);
-  animation: titleBreathe 6s ease-in-out infinite;
+  animation: titlePulse 4s ease-in-out infinite;
 }
 .title-overlay p {
   font-family: 'Quicksand', sans-serif;
   font-weight: 300; font-size: 0.85rem;
   letter-spacing: 0.25em; text-transform: uppercase;
-  color: rgba(255, 255, 255, 0);
-  transition: color 1.5s ease 0.8s;
-}
-.title-overlay p.revealed {
-  color: rgba(255, 255, 255, 0.35);
-  animation: titlePulse 4s ease-in-out infinite 1s;
+  color: rgba(255, 255, 255, 0.3);
+  animation: titlePulse 4s ease-in-out infinite 0.5s;
 }
 
 /* Sound toggle in toolbar */
 .sound-btn.active svg { color: rgba(255, 255, 255, 0.8); }
 
-@keyframes titleBreathe {
-  0%, 100% { opacity: 0.75; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.02); }
-}
-@keyframes titlePulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.6; } }
+@keyframes titlePulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
 
 /* ─── Casting mode (sender) ─── */
 body.casting canvas#main,
