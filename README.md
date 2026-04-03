@@ -6,6 +6,15 @@ A browser-based visualizer that renders calming, psychedelic animations — perf
 
 **[Launch Tripsitter](https://johankladder.github.io/tripsitter/)**
 
+<p align="center">
+  <img src="screenshots/deep.jpg" width="49%" alt="Deep Ocean scene with neon mood">
+  <img src="screenshots/spiral.jpg" width="49%" alt="Spiral scene with neon mood">
+</p>
+<p align="center">
+  <img src="screenshots/liquid.jpg" width="49%" alt="Liquid scene with ember mood">
+  <img src="screenshots/fireflies.jpg" width="49%" alt="Fireflies scene with aurora mood">
+</p>
+
 ## Features
 
 - **12 handcrafted scenes** — Deep ocean, cosmos, mandala, liquid, waves, kaleidoscope, fireflies, spiral, rain, plasma, mycelium, and threads. Each one is unique with organic, noise-driven animations.
