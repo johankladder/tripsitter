@@ -17,7 +17,11 @@ A browser-based visualizer that renders calming, psychedelic animations — perf
 - **12 handcrafted scenes** — Deep ocean, cosmos, mandala, liquid, waves, kaleidoscope, fireflies, spiral, rain, plasma, mycelium, and threads. Each one is unique with organic, noise-driven animations.
 - **10 color moods** — Ocean, aurora, ember, dream, forest, sunset, ice, neon, midnight, and rose. Moods transition smoothly so the vibe never breaks.
 - **Auto mode** — Sit back and let scenes and moods cycle automatically.
-- **Chromecast support** — Cast directly to your TV. The receiver is optimized for smooth playback on Cast hardware.
+- **Chromecast support** — Cast directly to your TV. Use D-pad controls to switch scenes and moods. The receiver is optimized for smooth playback on Cast hardware.
+
+<p align="center">
+  <img src="images/receiver.gif" width="80%" alt="Chromecast receiver switching scenes and moods">
+</p>
 - **Fullscreen** — One click for a distraction-free experience.
 - **Zero setup** — No installs, no accounts, no dependencies. Just open the link and go.
 
