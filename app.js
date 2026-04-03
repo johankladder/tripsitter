@@ -1,6 +1,8 @@
 // ══════════════════════════════════════════════════════
 // MOODS (color palettes)
 // ══════════════════════════════════════════════════════
+const TWO_PI = Math.PI * 2;
+
 const MOODS = {
   ocean: {
     bg: [5, 8, 25],
@@ -64,7 +66,26 @@ const M = {
 };
 
 function lerpC(a, b, t) {
-  return a.map((v, i) => v + (b[i] - v) * t);
+  a[0] += (b[0] - a[0]) * t;
+  a[1] += (b[1] - a[1]) * t;
+  a[2] += (b[2] - a[2]) * t;
+  return a;
+}
+
+// Pre-allocated arrays for rounded color values — avoids .map(Math.round) allocations in hot loops
+const _rc = [0, 0, 0];
+const _rcColors = Array.from({ length: 6 }, () => [0, 0, 0]);
+const _rcParticle = [0, 0, 0];
+
+function cacheRoundedColors() {
+  for (let i = 0; i < 6; i++) {
+    _rcColors[i][0] = M.colors[i][0] | 0;
+    _rcColors[i][1] = M.colors[i][1] | 0;
+    _rcColors[i][2] = M.colors[i][2] | 0;
+  }
+  _rcParticle[0] = M.particleColor[0] | 0;
+  _rcParticle[1] = M.particleColor[1] | 0;
+  _rcParticle[2] = M.particleColor[2] | 0;
 }
 
 function updateMoodLerp() {
@@ -119,9 +140,10 @@ const grad3 = [
   for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
 })();
 
+const F2 = 0.5 * (Math.sqrt(3) - 1);
+const G2 = (3 - Math.sqrt(3)) / 6;
+
 function noise2D(x, y) {
-  const F2 = 0.5 * (Math.sqrt(3) - 1);
-  const G2 = (3 - Math.sqrt(3)) / 6;
   const s = (x + y) * F2;
   let i = Math.floor(x + s), j = Math.floor(y + s);
   const t = (i + j) * G2;
@@ -152,7 +174,7 @@ let deepBlobs = [], deepParticles = [], deepFlows = [];
 
 function initDeep() {
   deepBlobs = Array.from({ length: 8 }, (_, i) => {
-    const angle = (i / 8) * Math.PI * 2;
+    const angle = (i / 8) * TWO_PI;
     const dist = Math.random() * 0.25 + 0.15;
     return {
       x: W * (0.5 + Math.cos(angle) * dist),
@@ -162,7 +184,7 @@ function initDeep() {
       sx: (Math.random() - 0.5) * 0.15,
       sy: (Math.random() - 0.5) * 0.15,
       ci: i % 6,
-      phase: Math.random() * Math.PI * 2,
+      phase: Math.random() * TWO_PI,
       ws: 0.0004 + Math.random() * 0.0003,
       pts: 7 + Math.floor(Math.random() * 4)
     };
@@ -176,7 +198,7 @@ function initDeep() {
     op: 0, mop: Math.random() * 0.5 + 0.15,
     life: 0, ml: Math.random() * 12000 + 6000,
     fs: Math.random() * 0.003 + 0.001,
-    drift: Math.random() * Math.PI * 2
+    drift: Math.random() * TWO_PI
   }));
 
   deepFlows = Array.from({ length: 6 }, () => createFlow());
@@ -184,7 +206,7 @@ function initDeep() {
 
 function createFlow() {
   const sx = Math.random() * W, sy = Math.random() * H;
-  const a = Math.random() * Math.PI * 2;
+  const a = Math.random() * TWO_PI;
   const segs = 60 + Math.floor(Math.random() * 40);
   const pts = [];
   for (let i = 0; i < segs; i++) {
@@ -236,7 +258,7 @@ function drawDeep(t, dt) {
     const radius = bl.baseR * (1 + 0.15 * Math.sin(t * bl.ws + bl.phase));
     const pts = [];
     for (let i = 0; i < bl.pts; i++) {
-      const a = (i / bl.pts) * Math.PI * 2;
+      const a = (i / bl.pts) * TWO_PI;
       const w = Math.sin(t * 0.0006 + bl.nOff + i * 1.7) * 0.25 + 1;
       pts.push({ x: bl.x + Math.cos(a) * radius * w, y: bl.y + Math.sin(a) * radius * w });
     }
@@ -267,11 +289,11 @@ function drawDeep(t, dt) {
     p.x += (p.sx + Math.sin(p.drift) * 0.15) * M.speed;
     p.y += p.sy * M.speed;
     if (p.life > p.ml) { p.x = Math.random() * W; p.y = H + 20; p.life = 0; }
-    const [r, g, b] = M.particleColor.map(Math.round);
-    ctx.beginPath(); ctx.arc(p.x, p.y, p.sz, 0, Math.PI * 2);
+    const [r, g, b] = _rcParticle;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.sz, 0, TWO_PI);
     ctx.fillStyle = `rgba(${r},${g},${b},${p.op})`; ctx.fill();
     if (p.sz > 1.5) {
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.sz * 4, 0, Math.PI * 2);
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.sz * 4, 0, TWO_PI);
       ctx.fillStyle = `rgba(${r},${g},${b},${p.op * 0.1})`; ctx.fill();
     }
   });
@@ -290,7 +312,7 @@ function drawMandala(t) {
     const ringR = maxR * (0.25 + layer * 0.18) * breathScale;
     const rot = t * (0.00008 + layer * 0.00003) * (layer % 2 === 0 ? 1 : -1);
     const petalR = ringR * (0.35 - layer * 0.03);
-    const c = M.colors[layer % 6].map(Math.round);
+    const c = _rcColors[layer % 6];
     const alpha = 0.06 + 0.02 * Math.sin(t * 0.0003 + layer);
 
     ctx.save();
@@ -298,20 +320,20 @@ function drawMandala(t) {
     ctx.rotate(rot);
 
     for (let i = 0; i < petals; i++) {
-      const a = (i / petals) * Math.PI * 2;
+      const a = (i / petals) * TWO_PI;
       const px = Math.cos(a) * ringR;
       const py = Math.sin(a) * ringR;
       const wobble = 1 + 0.15 * Math.sin(t * 0.0005 + i * 2.3 + layer);
 
       ctx.beginPath();
-      ctx.ellipse(px, py, petalR * wobble, petalR * wobble * 0.5, a, 0, Math.PI * 2);
+      ctx.ellipse(px, py, petalR * wobble, petalR * wobble * 0.5, a, 0, TWO_PI);
       const grad = ctx.createRadialGradient(px, py, 0, px, py, petalR * wobble);
       grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${alpha * 1.5})`);
       grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
       ctx.fillStyle = grad;
       ctx.fill();
 
-      const nextA = ((i + 1) / petals) * Math.PI * 2;
+      const nextA = ((i + 1) / petals) * TWO_PI;
       ctx.beginPath();
       ctx.moveTo(px, py);
       ctx.lineTo(Math.cos(nextA) * ringR, Math.sin(nextA) * ringR);
@@ -323,19 +345,19 @@ function drawMandala(t) {
   }
 
   // Center glow
-  const cc = M.colors[0].map(Math.round);
+  const cc = _rcColors[0];
   const cGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR * 0.3 * breathScale);
   cGrad.addColorStop(0, `rgba(${cc[0]},${cc[1]},${cc[2]},0.12)`);
   cGrad.addColorStop(1, `rgba(${cc[0]},${cc[1]},${cc[2]},0)`);
   ctx.fillStyle = cGrad;
-  ctx.beginPath(); ctx.arc(cx, cy, maxR * 0.3 * breathScale, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx, cy, maxR * 0.3 * breathScale, 0, TWO_PI); ctx.fill();
 
   // Outer rings
   for (let r = 0; r < 3; r++) {
     const rr = maxR * (0.9 + r * 0.08) * breathScale;
     const pulse = 0.03 + 0.02 * Math.sin(t * 0.0006 + r);
-    const rc = M.colors[(r + 3) % 6].map(Math.round);
-    ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2);
+    const rc = _rcColors[(r + 3) % 6];
+    ctx.beginPath(); ctx.arc(cx, cy, rr, 0, TWO_PI);
     ctx.strokeStyle = `rgba(${rc[0]},${rc[1]},${rc[2]},${pulse})`;
     ctx.lineWidth = 1; ctx.stroke();
   }
@@ -347,8 +369,8 @@ function drawMandala(t) {
     const px = cx + Math.cos(a) * dist, py = cy + Math.sin(a) * dist;
     const sz = 1 + Math.sin(t * 0.001 + i) * 0.8;
     const op = 0.15 + 0.1 * Math.sin(t * 0.0008 + i * 1.3);
-    const pc = M.particleColor.map(Math.round);
-    ctx.beginPath(); ctx.arc(px, py, sz, 0, Math.PI * 2);
+    const pc = _rcParticle;
+    ctx.beginPath(); ctx.arc(px, py, sz, 0, TWO_PI);
     ctx.fillStyle = `rgba(${pc[0]},${pc[1]},${pc[2]},${op})`; ctx.fill();
   }
 }
@@ -363,7 +385,7 @@ function initCosmos() {
     x: Math.random() * W, y: Math.random() * H,
     sz: Math.random() * 1.8 + 0.2,
     twinkle: Math.random() * 0.005 + 0.001,
-    phase: Math.random() * Math.PI * 2,
+    phase: Math.random() * TWO_PI,
     brightness: Math.random() * 0.6 + 0.2
   }));
   shootingStars = [];
@@ -391,13 +413,13 @@ function drawCosmos(t, dt) {
   }
 
   // Stars
-  const pc = M.particleColor.map(Math.round);
+  const pc = _rcParticle;
   stars.forEach(s => {
     const brightness = s.brightness * (0.6 + 0.4 * Math.sin(t * s.twinkle + s.phase));
-    ctx.beginPath(); ctx.arc(s.x, s.y, s.sz, 0, Math.PI * 2);
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.sz, 0, TWO_PI);
     ctx.fillStyle = `rgba(${pc[0]},${pc[1]},${pc[2]},${brightness})`; ctx.fill();
     if (s.sz > 1.2) {
-      ctx.beginPath(); ctx.arc(s.x, s.y, s.sz * 3, 0, Math.PI * 2);
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.sz * 3, 0, TWO_PI);
       ctx.fillStyle = `rgba(${pc[0]},${pc[1]},${pc[2]},${brightness * 0.08})`; ctx.fill();
     }
   });
@@ -435,7 +457,7 @@ function initLiquid() {
     r: Math.min(W, H) * (0.06 + Math.random() * 0.08),
     vx: (Math.random() - 0.5) * 0.4,
     vy: (Math.random() - 0.5) * 0.3,
-    phase: Math.random() * Math.PI * 2,
+    phase: Math.random() * TWO_PI,
     ci: i % 6,
     currentR: 0
   }));
@@ -458,13 +480,13 @@ function drawLiquid(t, dt) {
     const scale = 1 + pass * 0.6;
     const alpha = [0.15, 0.06, 0.025][pass];
     metaballs.forEach(mb => {
-      const c = M.colors[mb.ci].map(Math.round);
+      const c = _rcColors[mb.ci];
       const grad = ctx.createRadialGradient(mb.x, mb.y, 0, mb.x, mb.y, mb.currentR * scale);
       grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${alpha})`);
       grad.addColorStop(0.6, `rgba(${c[0]},${c[1]},${c[2]},${alpha * 0.4})`);
       grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
       ctx.fillStyle = grad;
-      ctx.beginPath(); ctx.arc(mb.x, mb.y, mb.currentR * scale, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(mb.x, mb.y, mb.currentR * scale, 0, TWO_PI); ctx.fill();
     });
   }
 
@@ -479,12 +501,12 @@ function drawLiquid(t, dt) {
         const strength = 1 - dist / threshold;
         const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
         const mr = (a.currentR + b.currentR) * 0.4 * strength;
-        const c = M.colors[a.ci].map(Math.round);
+        const c = _rcColors[a.ci];
         const grad = ctx.createRadialGradient(mx, my, 0, mx, my, mr);
         grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${0.08 * strength})`);
         grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
         ctx.fillStyle = grad;
-        ctx.beginPath(); ctx.arc(mx, my, mr, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(mx, my, mr, 0, TWO_PI); ctx.fill();
       }
     }
   }
@@ -496,8 +518,8 @@ function drawLiquid(t, dt) {
     const py = (H + 50 - ((t * 0.02 * M.speed + i * H / 30 * 1.3) % (H + 100)));
     const sz = 1 + Math.sin(t * 0.001 + i) * 0.5;
     const op = 0.15 + 0.1 * Math.sin(t * 0.0005 + i * 1.9);
-    const pc = M.particleColor.map(Math.round);
-    ctx.beginPath(); ctx.arc(px, py, sz, 0, Math.PI * 2);
+    const pc = _rcParticle;
+    ctx.beginPath(); ctx.arc(px, py, sz, 0, TWO_PI);
     ctx.fillStyle = `rgba(${pc[0]},${pc[1]},${pc[2]},${op})`; ctx.fill();
   }
 }
@@ -510,20 +532,25 @@ function drawWaves(t) {
 
   for (let l = 0; l < layers; l++) {
     const yBase = H * (0.25 + l * 0.08);
-    const c = M.colors[l % 6].map(Math.round);
+    const c = _rcColors[l % 6];
     const amplitude = 30 + l * 12 + 20 * Math.sin(t * 0.0002 + l);
     const freq = 0.003 - l * 0.0002;
     const speed = t * (0.0003 + l * 0.00005) * (l % 2 === 0 ? 1 : -1);
     const alpha = 0.04 + 0.02 * Math.sin(t * 0.0003 + l * 1.1);
 
+    // Compute wave points once, reuse for fill and stroke
+    const noiseY = l * 10 + t * 0.00005;
+    const sinOffset = t * 0.0004 + l;
+    const waveYs = [];
+    for (let x = 0; x <= W; x += 3) {
+      const n = noise2D(x * freq + speed, noiseY);
+      waveYs.push(yBase + n * amplitude + Math.sin(x * 0.01 + sinOffset) * amplitude * 0.3);
+    }
+
     // Fill below wave
     ctx.beginPath();
     ctx.moveTo(0, H);
-    for (let x = 0; x <= W; x += 3) {
-      const n = noise2D(x * freq + speed, l * 10 + t * 0.00005);
-      const y = yBase + n * amplitude + Math.sin(x * 0.01 + t * 0.0004 + l) * amplitude * 0.3;
-      ctx.lineTo(x, y);
-    }
+    for (let j = 0, x = 0; x <= W; x += 3, j++) ctx.lineTo(x, waveYs[j]);
     ctx.lineTo(W, H); ctx.closePath();
     const grad = ctx.createLinearGradient(0, yBase - amplitude, 0, yBase + amplitude + H * 0.3);
     grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${alpha})`);
@@ -533,17 +560,15 @@ function drawWaves(t) {
 
     // Wave line
     ctx.beginPath();
-    for (let x = 0; x <= W; x += 3) {
-      const n = noise2D(x * freq + speed, l * 10 + t * 0.00005);
-      const y = yBase + n * amplitude + Math.sin(x * 0.01 + t * 0.0004 + l) * amplitude * 0.3;
-      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    for (let j = 0, x = 0; x <= W; x += 3, j++) {
+      x === 0 ? ctx.moveTo(x, waveYs[j]) : ctx.lineTo(x, waveYs[j]);
     }
     ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha * 2})`;
     ctx.lineWidth = 1; ctx.stroke();
   }
 
   // Foam sparkles
-  const pc = M.particleColor.map(Math.round);
+  const pc = _rcParticle;
   for (let i = 0; i < 50; i++) {
     const x = (t * 0.03 * M.speed + i * W / 50) % W;
     const l = i % layers;
@@ -554,7 +579,7 @@ function drawWaves(t) {
     const amplitude = 30 + l * 12 + 20 * Math.sin(t * 0.0002 + l);
     const y = yBase + n * amplitude + Math.sin(x * 0.01 + t * 0.0004 + l) * amplitude * 0.3;
     const op = 0.1 + 0.15 * Math.sin(t * 0.002 + i * 2.1);
-    ctx.beginPath(); ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+    ctx.beginPath(); ctx.arc(x, y, 1.2, 0, TWO_PI);
     ctx.fillStyle = `rgba(${pc[0]},${pc[1]},${pc[2]},${op})`; ctx.fill();
   }
 }
@@ -565,7 +590,7 @@ function drawWaves(t) {
 function drawKaleido(t) {
   const cx = W / 2, cy = H / 2;
   const segments = 8;
-  const segAngle = Math.PI * 2 / segments;
+  const segAngle = TWO_PI / segments;
   const maxR = Math.sqrt(cx * cx + cy * cy);
 
   ctx.save();
@@ -590,13 +615,13 @@ function drawKaleido(t) {
       const px = Math.cos(angle) * dist;
       const py = Math.sin(angle) * dist;
       const sz = (20 + i * 8) * (1 + 0.3 * Math.sin(t * 0.0004 + i * 1.5));
-      const c = M.colors[i % 6].map(Math.round);
+      const c = _rcColors[i % 6];
       const alpha = 0.06 + 0.03 * Math.sin(t * 0.0005 + i * 2);
 
       ctx.beginPath();
       const sides = 3 + Math.floor(Math.sin(t * 0.0001 + i) * 1.5 + 1.5);
       for (let s = 0; s <= sides; s++) {
-        const sa = (s / sides) * Math.PI * 2 + t * 0.0002;
+        const sa = (s / sides) * TWO_PI + t * 0.0002;
         const sr = sz * (1 + 0.3 * Math.sin(t * 0.0006 + s * 1.7 + i));
         const sx = px + Math.cos(sa) * sr;
         const sy = py + Math.sin(sa) * sr;
@@ -617,7 +642,7 @@ function drawKaleido(t) {
           + noise2D(x * 0.005 + t * 0.0001, i * 5) * 20;
         x === 0 ? ctx.moveTo(x, y + segAngle * x * 0.1) : ctx.lineTo(x, y + segAngle * x * 0.1);
       }
-      const c = M.colors[(i + 2) % 6].map(Math.round);
+      const c = _rcColors[(i + 2) % 6];
       ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.04)`;
       ctx.lineWidth = 1.5; ctx.stroke();
     }
@@ -631,12 +656,12 @@ function drawKaleido(t) {
   const breathe = 1 + 0.1 * Math.sin(t * 0.0004);
   for (let r = 3; r >= 0; r--) {
     const rr = 20 + r * 15 * breathe;
-    const c = M.colors[r % 6].map(Math.round);
+    const c = _rcColors[r % 6];
     const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, rr);
     grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${0.15 - r * 0.03})`);
     grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
     ctx.fillStyle = grad;
-    ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, rr, 0, TWO_PI); ctx.fill();
   }
 }
 
@@ -651,12 +676,12 @@ function initFireflies() {
     vx: (Math.random() - 0.5) * 0.3,
     vy: (Math.random() - 0.5) * 0.3,
     sz: Math.random() * 3 + 1,
-    phase: Math.random() * Math.PI * 2,
+    phase: Math.random() * TWO_PI,
     pulseSpeed: 0.002 + Math.random() * 0.003,
     flashTimer: Math.random() * 8000,
     flashInterval: 5000 + Math.random() * 10000,
     ci: Math.floor(Math.random() * 6),
-    drift: Math.random() * Math.PI * 2
+    drift: Math.random() * TWO_PI
   }));
 }
 
@@ -690,17 +715,17 @@ function drawFireflies(t, dt) {
       brightness += (1 - flashProgress) * 0.6;
     }
 
-    const c = M.colors[f.ci].map(Math.round);
+    const c = _rcColors[f.ci];
     const glowR = f.sz * 8;
     const grad = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, glowR);
     grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${brightness * 0.4})`);
     grad.addColorStop(0.3, `rgba(${c[0]},${c[1]},${c[2]},${brightness * 0.15})`);
     grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
     ctx.fillStyle = grad;
-    ctx.beginPath(); ctx.arc(f.x, f.y, glowR, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(f.x, f.y, glowR, 0, TWO_PI); ctx.fill();
 
     // Core
-    ctx.beginPath(); ctx.arc(f.x, f.y, f.sz, 0, Math.PI * 2);
+    ctx.beginPath(); ctx.arc(f.x, f.y, f.sz, 0, TWO_PI);
     ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${brightness * 0.8})`;
     ctx.fill();
   });
@@ -721,8 +746,8 @@ function drawSpiral(t) {
   ctx.translate(cx, cy);
 
   for (let arm = 0; arm < arms; arm++) {
-    const armAngle = (arm / arms) * Math.PI * 2;
-    const c = M.colors[arm % 6].map(Math.round);
+    const armAngle = (arm / arms) * TWO_PI;
+    const c = _rcColors[arm % 6];
 
     // Spiral curve
     ctx.beginPath();
@@ -753,35 +778,35 @@ function drawSpiral(t) {
       grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${glowAlpha})`);
       grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
       ctx.fillStyle = grad;
-      ctx.beginPath(); ctx.arc(px, py, sz, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(px, py, sz, 0, TWO_PI); ctx.fill();
     }
   }
 
   // Center glow
-  const cc = M.colors[0].map(Math.round);
+  const cc = _rcColors[0];
   for (let r = 2; r >= 0; r--) {
     const rr = (15 + r * 20) * breathe;
     const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, rr);
     grad.addColorStop(0, `rgba(${cc[0]},${cc[1]},${cc[2]},${0.12 - r * 0.03})`);
     grad.addColorStop(1, `rgba(${cc[0]},${cc[1]},${cc[2]},0)`);
     ctx.fillStyle = grad;
-    ctx.beginPath(); ctx.arc(0, 0, rr, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, rr, 0, TWO_PI); ctx.fill();
   }
 
   ctx.restore();
 
   // Floating particles along spirals
-  const pc = M.particleColor.map(Math.round);
+  const pc = _rcParticle;
   for (let i = 0; i < 40; i++) {
     const arm = i % arms;
     const frac = (t * 0.00005 * M.speed + i / 40) % 1;
     const r = maxR * frac * breathe;
-    const a = (arm / arms) * Math.PI * 2 + globalRot + frac * Math.PI * 4;
+    const a = (arm / arms) * TWO_PI + globalRot + frac * Math.PI * 4;
     const px = cx + Math.cos(a) * r;
     const py = cy + Math.sin(a) * r;
     const sz = 1 + (1 - frac) * 1.5;
     const op = 0.15 + 0.1 * Math.sin(t * 0.001 + i * 2);
-    ctx.beginPath(); ctx.arc(px, py, sz, 0, Math.PI * 2);
+    ctx.beginPath(); ctx.arc(px, py, sz, 0, TWO_PI);
     ctx.fillStyle = `rgba(${pc[0]},${pc[1]},${pc[2]},${op})`; ctx.fill();
   }
 }
@@ -803,11 +828,15 @@ function initRain() {
   ripples = [];
 }
 
+const _layerSpeeds = [0.6, 1, 1.5];
+const _layerAlphas = [0.5, 0.8, 1];
+
 function drawRain(t, dt) {
   // Rain streaks
+  const pc = _rcParticle;
   raindrops.forEach(d => {
-    const layerSpeed = [0.6, 1, 1.5][d.layer];
-    const layerAlpha = [0.5, 0.8, 1][d.layer];
+    const layerSpeed = _layerSpeeds[d.layer];
+    const layerAlpha = _layerAlphas[d.layer];
     d.y += d.speed * layerSpeed * M.speed;
     d.x += Math.sin(t * 0.0002 + d.x * 0.01) * 0.3;
 
@@ -825,7 +854,6 @@ function drawRain(t, dt) {
       d.x = Math.random() * W;
     }
 
-    const pc = M.particleColor.map(Math.round);
     const alpha = d.opacity * layerAlpha;
     ctx.beginPath();
     ctx.moveTo(d.x, d.y);
@@ -841,10 +869,10 @@ function drawRain(t, dt) {
     const progress = r.life / r.maxLife;
     r.r = r.maxR * progress;
     const alpha = (1 - progress) * 0.12;
-    const c = M.colors[r.ci].map(Math.round);
+    const c = _rcColors[r.ci];
 
     ctx.beginPath();
-    ctx.ellipse(r.x, r.y, r.r, r.r * 0.3, 0, 0, Math.PI * 2);
+    ctx.ellipse(r.x, r.y, r.r, r.r * 0.3, 0, 0, TWO_PI);
     ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
     ctx.lineWidth = 1;
     ctx.stroke();
@@ -856,12 +884,12 @@ function drawRain(t, dt) {
     const mx = W * (0.1 + i * 0.2) + Math.sin(t * 0.0001 + i * 3) * 100;
     const my = H * 0.75 + Math.sin(t * 0.00015 + i * 2) * 30;
     const mr = 80 + 40 * Math.sin(t * 0.0002 + i);
-    const c = M.colors[i % 6].map(Math.round);
+    const c = _rcColors[i % 6];
     const grad = ctx.createRadialGradient(mx, my, 0, mx, my, mr);
     grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},0.03)`);
     grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
     ctx.fillStyle = grad;
-    ctx.beginPath(); ctx.arc(mx, my, mr, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(mx, my, mr, 0, TWO_PI); ctx.fill();
   }
 }
 
@@ -899,13 +927,13 @@ function drawPlasma(t) {
   }
 
   // Bright spots
-  const pc = M.particleColor.map(Math.round);
+  const pc = _rcParticle;
   for (let i = 0; i < 20; i++) {
     const px = W * (0.5 + 0.4 * Math.sin(timeScale * 0.2 + i * 1.7));
     const py = H * (0.5 + 0.4 * Math.cos(timeScale * 0.15 + i * 2.3));
     const sz = 3 + 2 * Math.sin(timeScale * 0.5 + i);
     const op = 0.1 + 0.08 * Math.sin(timeScale * 0.3 + i * 1.1);
-    ctx.beginPath(); ctx.arc(px, py, sz, 0, Math.PI * 2);
+    ctx.beginPath(); ctx.arc(px, py, sz, 0, TWO_PI);
     ctx.fillStyle = `rgba(${pc[0]},${pc[1]},${pc[2]},${op})`; ctx.fill();
   }
 }
@@ -918,17 +946,23 @@ function drawAurora(t) {
 
   for (let b = 0; b < bands; b++) {
     const yBase = H * (0.15 + b * 0.08);
-    const c = M.colors[b % 6].map(Math.round);
+    const c = _rcColors[b % 6];
     const waveSpeed = t * (0.0002 + b * 0.00003);
     const amplitude = 40 + 25 * Math.sin(t * 0.0001 + b * 1.5);
 
+    // Compute wave positions once, reuse for curtain + edge glow
+    const noiseY = b * 7 + t * 0.00004;
+    const baseAlpha = 0.03 + 0.02 * Math.sin(t * 0.0003 + b);
+    const sinOffset = t * 0.0003 + b;
+
     // Aurora curtain — vertical gradient strips
-    for (let x = 0; x < W; x += 4) {
-      const n = noise2D(x * 0.003 + waveSpeed, b * 7 + t * 0.00004);
-      const waveY = yBase + n * amplitude + Math.sin(x * 0.008 + t * 0.0003 + b) * amplitude * 0.4;
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += 4) {
+      const n = noise2D(x * 0.003 + waveSpeed, noiseY);
+      const waveY = yBase + n * amplitude + Math.sin(x * 0.008 + sinOffset) * amplitude * 0.4;
       const curtainH = 60 + 40 * (noise2D(x * 0.005 + b * 3, t * 0.00005) * 0.5 + 0.5);
       const shimmer = 0.5 + 0.5 * Math.sin(t * 0.002 + x * 0.02 + b * 3);
-      const alpha = (0.03 + 0.02 * Math.sin(t * 0.0003 + b)) * shimmer;
+      const alpha = baseAlpha * shimmer;
 
       const grad = ctx.createLinearGradient(x, waveY, x, waveY + curtainH);
       grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${alpha * 1.5})`);
@@ -937,15 +971,12 @@ function drawAurora(t) {
 
       ctx.fillStyle = grad;
       ctx.fillRect(x, waveY, 5, curtainH);
+
+      // Build edge path simultaneously
+      x === 0 ? ctx.moveTo(x, waveY) : ctx.lineTo(x, waveY);
     }
 
-    // Top edge glow
-    ctx.beginPath();
-    for (let x = 0; x <= W; x += 4) {
-      const n = noise2D(x * 0.003 + waveSpeed, b * 7 + t * 0.00004);
-      const y = yBase + n * amplitude + Math.sin(x * 0.008 + t * 0.0003 + b) * amplitude * 0.4;
-      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    }
+    // Top edge glow (path already built above)
     const edgeAlpha = 0.06 + 0.03 * Math.sin(t * 0.0004 + b * 2);
     ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${edgeAlpha})`;
     ctx.lineWidth = 2;
@@ -953,12 +984,12 @@ function drawAurora(t) {
   }
 
   // Stars behind aurora
-  const pc = M.particleColor.map(Math.round);
+  const pc = _rcParticle;
   for (let i = 0; i < 30; i++) {
     const sx = (i * W / 30 + t * 0.001) % W;
     const sy = H * (0.05 + (noise2D(i * 5, 0) * 0.5 + 0.5) * 0.5);
     const twinkle = 0.15 + 0.1 * Math.sin(t * (0.002 + i * 0.0003) + i * 2);
-    ctx.beginPath(); ctx.arc(sx, sy, 1, 0, Math.PI * 2);
+    ctx.beginPath(); ctx.arc(sx, sy, 1, 0, TWO_PI);
     ctx.fillStyle = `rgba(${pc[0]},${pc[1]},${pc[2]},${twinkle})`; ctx.fill();
   }
 }
@@ -1038,6 +1069,7 @@ function animate(timestamp) {
   globalTime += dt;
 
   updateMoodLerp();
+  cacheRoundedColors();
   updateAutoMood(dt);
 
   // Background
