@@ -1,5 +1,3 @@
-# Tripsitter
-
 <p align="center">
   <img src="images/logo.jpg" width="100%" alt="Tripsitter">
 </p>
