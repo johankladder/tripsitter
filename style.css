@@ -265,6 +265,14 @@ body.show-ui .panel { transform: translateY(0); opacity: 1; }
   animation: titlePulse 4s ease-in-out infinite 0.5s;
 }
 
+.title-overlay .credit {
+  position: absolute; bottom: 1.5rem; right: 1.5rem;
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 300; font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.25);
+}
+
 @keyframes titlePulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
 
 /* ─── Casting mode (sender) ─── */
