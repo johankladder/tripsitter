@@ -20,6 +20,8 @@ const GARDEN_MAX_SPORES = 80;
 const GARDEN_TENDRIL_SPEED = 0.0008;
 const GARDEN_BLOOM_LIFESPAN = 25000; // ms before a bloom starts fading
 const GARDEN_DECAY_DURATION = 12000; // ms to fade out completely
+const GARDEN_BLOOM_TYPES = ['petal', 'spiral', 'star', 'dandelion', 'lotus'];
+const GARDEN_BLOOM_COUNT = GARDEN_BLOOM_TYPES.length;
 
 function initGarden() {
   const controls = document.querySelector('.controls');
@@ -54,6 +56,7 @@ function initGarden() {
         pulseOffset: Math.random() * TWO_PI,
         bloomLife: 0, // time spent fully bloomed
         decayProgress: 0, // 0 to 1, how far through dying
+        bloomType: 0, // index into GARDEN_BLOOM_TYPES
       };
     }
   }
@@ -79,6 +82,7 @@ function gardenPlant(col, row) {
     cell.state = 'seed';
     cell.plantTime = globalTime;
     cell.ci = Math.floor(Math.random() * 6);
+    cell.bloomType = Math.floor(Math.random() * GARDEN_BLOOM_COUNT);
     cell.growProgress = 0;
     cell.tendrils = [];
     cell.sporeTimer = 0;
@@ -126,6 +130,7 @@ function gardenBurst(col, row) {
         gardenGrid[nr][nc].state = 'seed';
         gardenGrid[nr][nc].plantTime = globalTime + Math.random() * 800;
         gardenGrid[nr][nc].ci = Math.random() < 0.7 ? cell.ci : Math.floor(Math.random() * 6);
+        gardenGrid[nr][nc].bloomType = Math.random() < 0.5 ? cell.bloomType : Math.floor(Math.random() * GARDEN_BLOOM_COUNT);
         gardenGrid[nr][nc].growProgress = 0;
         gardenGrid[nr][nc].tendrils = [];
         gardenGrid[nr][nc].sporeTimer = 0;
@@ -383,8 +388,9 @@ function drawGarden(t, dt) {
         const sz = maxR * progress;
         const fade = cell.state === 'decaying' ? 1 - cell.decayProgress : 1;
         const alpha = (0.1 + progress * 0.2) * pulse * fade;
+        const type = GARDEN_BLOOM_TYPES[cell.bloomType];
 
-        // Outer haze
+        // Outer haze (shared by all types)
         const hazeR = sz + gardenCellSize * 0.2;
         const hazeGrad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, hazeR);
         hazeGrad.addColorStop(0, `rgba(${col[0]},${col[1]},${col[2]},${alpha * 0.5})`);
@@ -395,21 +401,135 @@ function drawGarden(t, dt) {
         ctx.arc(pos.x, pos.y, hazeR, 0, TWO_PI);
         ctx.fill();
 
-        // Core bloom
-        if (cell.state === 'bloomed') {
-          // Petal-like rings
+        // Type-specific bloom shape
+        if (cell.state === 'bloomed' || (cell.state === 'decaying' && cell.decayProgress < 0.8)) {
           ctx.globalCompositeOperation = 'screen';
-          for (let ring = 0; ring < 3; ring++) {
-            const ringR = sz * (0.4 + ring * 0.3);
-            const ringAlpha = alpha * (1 - ring * 0.3) * 0.6;
-            const ringGrad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, ringR);
-            ringGrad.addColorStop(0, `rgba(${col[0]},${col[1]},${col[2]},${ringAlpha})`);
-            ringGrad.addColorStop(1, `rgba(${col[0]},${col[1]},${col[2]},0)`);
-            ctx.fillStyle = ringGrad;
+
+          if (type === 'petal') {
+            // Soft rotating petals
+            const petalCount = 6;
+            const spin = cell.bloomPhase * 0.3;
+            for (let p = 0; p < petalCount; p++) {
+              const angle = spin + (p / petalCount) * TWO_PI;
+              const petalLen = sz * 0.9;
+              const petalW = sz * 0.35;
+              const px = pos.x + Math.cos(angle) * petalLen * 0.4;
+              const py = pos.y + Math.sin(angle) * petalLen * 0.4;
+              const petalGrad = ctx.createRadialGradient(px, py, 0, px, py, petalW);
+              petalGrad.addColorStop(0, `rgba(${col[0]},${col[1]},${col[2]},${alpha * 0.7})`);
+              petalGrad.addColorStop(1, `rgba(${col[0]},${col[1]},${col[2]},0)`);
+              ctx.fillStyle = petalGrad;
+              ctx.beginPath();
+              ctx.ellipse(px, py, petalW, petalLen * 0.5, angle, 0, TWO_PI);
+              ctx.fill();
+            }
+          } else if (type === 'spiral') {
+            // Fibonacci spiral arms
+            const arms = 3;
+            const spin = cell.bloomPhase * 0.2;
+            ctx.lineWidth = 1.5;
+            for (let a = 0; a < arms; a++) {
+              const baseAngle = spin + (a / arms) * TWO_PI;
+              ctx.beginPath();
+              for (let s = 0; s < 30; s++) {
+                const t2 = s / 30;
+                const r2 = sz * t2;
+                const angle = baseAngle + t2 * 3;
+                const sx = pos.x + Math.cos(angle) * r2;
+                const sy = pos.y + Math.sin(angle) * r2;
+                if (s === 0) ctx.moveTo(sx, sy);
+                else ctx.lineTo(sx, sy);
+              }
+              ctx.strokeStyle = `rgba(${col[0]},${col[1]},${col[2]},${alpha * 0.6})`;
+              ctx.stroke();
+              // Dot at spiral tip
+              const tipAngle = baseAngle + 3;
+              const tipX = pos.x + Math.cos(tipAngle) * sz;
+              const tipY = pos.y + Math.sin(tipAngle) * sz;
+              ctx.beginPath();
+              ctx.arc(tipX, tipY, 2.5, 0, TWO_PI);
+              ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${alpha * 0.8})`;
+              ctx.fill();
+            }
+          } else if (type === 'star') {
+            // Pointed star with radiating rays
+            const points = 5;
+            const spin = cell.bloomPhase * 0.15;
+            // Rays
+            ctx.lineWidth = 1;
+            for (let p = 0; p < points * 2; p++) {
+              const angle = spin + (p / (points * 2)) * TWO_PI;
+              const isOuter = p % 2 === 0;
+              const rayLen = isOuter ? sz : sz * 0.45;
+              const rx = pos.x + Math.cos(angle) * rayLen;
+              const ry = pos.y + Math.sin(angle) * rayLen;
+              ctx.beginPath();
+              ctx.moveTo(pos.x, pos.y);
+              ctx.lineTo(rx, ry);
+              ctx.strokeStyle = `rgba(${col[0]},${col[1]},${col[2]},${alpha * (isOuter ? 0.5 : 0.25)})`;
+              ctx.stroke();
+            }
+            // Star shape fill
             ctx.beginPath();
-            ctx.arc(pos.x, pos.y, ringR, 0, TWO_PI);
+            for (let p = 0; p < points * 2; p++) {
+              const angle = spin + (p / (points * 2)) * TWO_PI - Math.PI / 2;
+              const r2 = p % 2 === 0 ? sz * 0.85 : sz * 0.35;
+              const sx = pos.x + Math.cos(angle) * r2;
+              const sy = pos.y + Math.sin(angle) * r2;
+              if (p === 0) ctx.moveTo(sx, sy);
+              else ctx.lineTo(sx, sy);
+            }
+            ctx.closePath();
+            ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${alpha * 0.3})`;
             ctx.fill();
+          } else if (type === 'dandelion') {
+            // Many thin lines radiating outward with dots at ends
+            const seeds = 14;
+            const spin = cell.bloomPhase * 0.1;
+            ctx.lineWidth = 0.5;
+            for (let s = 0; s < seeds; s++) {
+              const angle = spin + (s / seeds) * TWO_PI + Math.sin(cell.bloomPhase + s * 1.7) * 0.15;
+              const len = sz * (0.5 + 0.5 * Math.sin(cell.pulseOffset + s * 0.9));
+              const ex = pos.x + Math.cos(angle) * len;
+              const ey = pos.y + Math.sin(angle) * len;
+              // Stem
+              ctx.beginPath();
+              ctx.moveTo(pos.x, pos.y);
+              ctx.lineTo(ex, ey);
+              ctx.strokeStyle = `rgba(${col[0]},${col[1]},${col[2]},${alpha * 0.35})`;
+              ctx.stroke();
+              // Seed puff
+              const puffSz = 1.5 + Math.sin(cell.bloomPhase * 0.5 + s) * 0.8;
+              const puffGrad = ctx.createRadialGradient(ex, ey, 0, ex, ey, puffSz * 3);
+              puffGrad.addColorStop(0, `rgba(${col[0]},${col[1]},${col[2]},${alpha * 0.6})`);
+              puffGrad.addColorStop(1, `rgba(${col[0]},${col[1]},${col[2]},0)`);
+              ctx.fillStyle = puffGrad;
+              ctx.beginPath();
+              ctx.arc(ex, ey, puffSz * 3, 0, TWO_PI);
+              ctx.fill();
+            }
+          } else if (type === 'lotus') {
+            // Layered concentric petal rings that open outward
+            const layers = 3;
+            for (let l = 0; l < layers; l++) {
+              const layerPetals = 4 + l * 2;
+              const layerR = sz * (0.3 + l * 0.3);
+              const spin = cell.bloomPhase * (0.2 - l * 0.05) + l * 0.5;
+              for (let p = 0; p < layerPetals; p++) {
+                const angle = spin + (p / layerPetals) * TWO_PI;
+                const px = pos.x + Math.cos(angle) * layerR * 0.5;
+                const py = pos.y + Math.sin(angle) * layerR * 0.5;
+                const petalW = layerR * 0.4;
+                const petalH = layerR * 0.7;
+                const layerAlpha = alpha * (0.5 - l * 0.1);
+                ctx.beginPath();
+                ctx.ellipse(px, py, petalW * 0.5, petalH * 0.5, angle, 0, TWO_PI);
+                ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${layerAlpha})`;
+                ctx.fill();
+              }
+            }
           }
+
           ctx.globalCompositeOperation = 'source-over';
         }
 
