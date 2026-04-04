@@ -15,7 +15,7 @@ A browser-based visualizer that renders calming, psychedelic animations — perf
 ## Features
 
 - **Two modes** — Choose between **Ambient** for lean-back visuals and **Interactive** for hands-on play. Pick your mode from the splash screen when you launch.
-- **12 handcrafted scenes** — Deep ocean, cosmos, mandala, liquid, waves, kaleidoscope, fireflies, spiral, rain, plasma, mycelium, and threads. Each one is unique with organic, noise-driven animations.
+- **12 handcrafted scenes** — Deep ocean, cosmos, mandala, liquid, waves, kaleidoscope, fireflies, spiral, rain, ink, mycelium, and threads. Each one is unique with organic, noise-driven animations.
 - **10 color moods** — Ocean, aurora, ember, dream, forest, sunset, ice, neon, midnight, and rose. Moods transition smoothly so the vibe never breaks.
 - **Auto mode** — Sit back and let scenes and moods cycle automatically.
 - **Chromecast support** — Cast directly to your TV. Use D-pad controls to navigate scenes and moods. Long-press Enter to switch between ambient and interactive modes on the TV.

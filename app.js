@@ -203,7 +203,7 @@ let autoSceneTimer = 0;
 const AUTO_MOOD_INTERVAL = 30000;
 const AUTO_SCENE_INTERVAL = 90000;
 const moodKeys = Object.keys(MOODS);
-const sceneKeys = ['deep', 'mandala', 'cosmos', 'liquid', 'waves', 'kaleido', 'fireflies', 'spiral', 'rain', 'plasma', 'mycelium', 'threads'];
+const sceneKeys = ['deep', 'mandala', 'cosmos', 'liquid', 'waves', 'kaleido', 'fireflies', 'spiral', 'rain', 'ink', 'mycelium', 'threads'];
 const _moodBtns = document.querySelectorAll('.mood-btn');
 const _sceneBtns = document.querySelectorAll('.scene-btn');
 
