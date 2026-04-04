@@ -370,15 +370,28 @@ if (fullscreenBtn) {
 // ══════════════════════════════════════════════════════
 let appMode = 'ambient'; // 'ambient', 'interactive', or 'garden'
 
+function showModeBackBtn(show) {
+  const btn = document.getElementById('modeBackBtn');
+  if (btn) {
+    btn.style.display = show ? '' : 'none';
+    if (show) requestAnimationFrame(() => btn.classList.add('visible'));
+    else btn.classList.remove('visible');
+  }
+}
+
 function startWithMode(mode) {
   appMode = mode;
   const overlay = document.getElementById('titleOverlay');
   if (overlay) overlay.classList.add('hidden');
   started = true;
+  showModeBackBtn(mode === 'interactive' || mode === 'garden');
   if (mode === 'interactive' && typeof initSymbiosis === 'function') {
     initSymbiosis();
   } else if (mode === 'garden' && typeof initGarden === 'function') {
     initGarden();
+  } else {
+    const controls = document.querySelector('.controls');
+    if (controls) controls.style.display = '';
   }
 }
 
@@ -403,6 +416,7 @@ function switchToMode(mode) {
   if (overlay) overlay.classList.add('hidden');
   started = true;
 
+  showModeBackBtn(mode === 'interactive' || mode === 'garden');
   if (mode === 'interactive' && typeof initSymbiosis === 'function') {
     initSymbiosis();
   } else if (mode === 'garden' && typeof initGarden === 'function') {
@@ -420,6 +434,7 @@ function switchToMode(mode) {
 function returnToSplash() {
   started = false;
   appMode = 'ambient';
+  showModeBackBtn(false);
   const overlay = document.getElementById('titleOverlay');
   if (overlay) overlay.classList.remove('hidden');
   // Clean up symbiosis state
@@ -435,7 +450,7 @@ function returnToSplash() {
     gardenSpores = [];
   }
   const controls = document.querySelector('.controls');
-  if (controls) controls.style.display = '';
+  if (controls) controls.style.display = 'none';
 }
 
 // Splash screen — wire up mode selection

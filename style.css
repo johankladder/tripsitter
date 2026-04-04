@@ -252,6 +252,20 @@ body.show-ui .panel { transform: translateY(0); opacity: 1; }
 /* Hide old pseudo-element tooltips */
 .mood-btn::before { display: none !important; }
 
+/* ─── Floating back button for interactive/garden modes ─── */
+.mode-back-btn {
+  position: fixed;
+  top: 20px; left: 20px;
+  z-index: 30;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.mode-back-btn.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
 /* ─── Auto mood in toolbar ─── */
 .auto-mood-btn::before { display: none !important; }
 
