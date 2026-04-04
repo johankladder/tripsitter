@@ -40,9 +40,8 @@ function createOrganism(cx, cy, colorOffset) {
 }
 
 function initSymbiosis() {
-  // Hide ambient UI controls
-  const controls = document.querySelector('.controls');
-  if (controls) controls.style.display = 'none';
+  // Hide ambient panel but keep toolbar (back button)
+  setPanelVisible(false);
 
   organisms[0] = createOrganism(W * 0.28, H * 0.5, symbColorOffset[0]);
   organisms[1] = createOrganism(W * 0.72, H * 0.5, symbColorOffset[1]);

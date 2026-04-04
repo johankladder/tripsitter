@@ -36,9 +36,8 @@ function initConstellation() {
   document.body.appendChild(cursorEl);
   updateCursorEl();
 
-  // Hide ambient UI controls
-  const controls = document.querySelector('.controls');
-  if (controls) controls.style.display = 'none';
+  // Hide ambient panel but keep toolbar (back button)
+  setPanelVisible(false);
 }
 
 function updateCursorEl() {

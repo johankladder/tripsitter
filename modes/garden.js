@@ -24,8 +24,8 @@ const GARDEN_BLOOM_TYPES = ['petal', 'spiral', 'star', 'dandelion', 'lotus'];
 const GARDEN_BLOOM_COUNT = GARDEN_BLOOM_TYPES.length;
 
 function initGarden() {
-  const controls = document.querySelector('.controls');
-  if (controls) controls.style.display = 'none';
+  // Hide ambient panel but keep toolbar (back button)
+  setPanelVisible(false);
 
   // Calculate grid dimensions to fill screen nicely
   // Aim for cells around 60-80px so it feels spacious on a TV

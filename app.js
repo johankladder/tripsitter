@@ -370,13 +370,9 @@ if (fullscreenBtn) {
 // ══════════════════════════════════════════════════════
 let appMode = 'ambient'; // 'ambient', 'interactive', or 'garden'
 
-function showModeBackBtn(show) {
-  const btn = document.getElementById('modeBackBtn');
-  if (btn) {
-    btn.style.display = show ? '' : 'none';
-    if (show) requestAnimationFrame(() => btn.classList.add('visible'));
-    else btn.classList.remove('visible');
-  }
+function setPanelVisible(show) {
+  const panel = document.querySelector('.panel');
+  if (panel) panel.classList.toggle('panel-hidden', !show);
 }
 
 function startWithMode(mode) {
@@ -384,14 +380,13 @@ function startWithMode(mode) {
   const overlay = document.getElementById('titleOverlay');
   if (overlay) overlay.classList.add('hidden');
   started = true;
-  showModeBackBtn(mode === 'interactive' || mode === 'garden');
+  const controls = document.querySelector('.controls');
+  if (controls) controls.style.display = '';
+  setPanelVisible(mode === 'ambient');
   if (mode === 'interactive' && typeof initSymbiosis === 'function') {
     initSymbiosis();
   } else if (mode === 'garden' && typeof initGarden === 'function') {
     initGarden();
-  } else {
-    const controls = document.querySelector('.controls');
-    if (controls) controls.style.display = '';
   }
 }
 
@@ -416,14 +411,13 @@ function switchToMode(mode) {
   if (overlay) overlay.classList.add('hidden');
   started = true;
 
-  showModeBackBtn(mode === 'interactive' || mode === 'garden');
+  const controls = document.querySelector('.controls');
+  if (controls) controls.style.display = '';
+  setPanelVisible(mode === 'ambient');
   if (mode === 'interactive' && typeof initSymbiosis === 'function') {
     initSymbiosis();
   } else if (mode === 'garden' && typeof initGarden === 'function') {
     initGarden();
-  } else {
-    const controls = document.querySelector('.controls');
-    if (controls) controls.style.display = '';
   }
 
   // Update mode buttons
@@ -434,7 +428,7 @@ function switchToMode(mode) {
 function returnToSplash() {
   started = false;
   appMode = 'ambient';
-  showModeBackBtn(false);
+  setPanelVisible(true);
   const overlay = document.getElementById('titleOverlay');
   if (overlay) overlay.classList.remove('hidden');
   // Clean up symbiosis state
