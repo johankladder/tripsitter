@@ -45,6 +45,33 @@ window['__onGCastApiAvailable'] = function (isAvailable) {
   });
   observer.observe(document.body, { childList: true, subtree: true });
 
+  // Listen for messages from the receiver (two-way sync)
+  function onReceiverMessage(namespace, message) {
+    const data = typeof message === 'string' ? JSON.parse(message) : message;
+    if (data.scene) {
+      const btn = document.querySelector(`.scene-btn[data-scene="${data.scene}"]`);
+      if (btn) {
+        document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        switchScene(data.scene);
+      }
+    }
+    if (data.mood) {
+      const btn = document.querySelector(`.mood-btn[data-mood="${data.mood}"]`);
+      if (btn) {
+        document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        targetMood = MOODS[data.mood];
+        currentMood = data.mood;
+      }
+    }
+    if (data.autoMood !== undefined) {
+      autoMood = data.autoMood;
+      const autoBtn = document.getElementById('autoMoodBtn');
+      if (autoBtn) autoBtn.classList.toggle('active', autoMood);
+    }
+  }
+
   // Listen for session changes
   cast.framework.CastContext.getInstance().addEventListener(
     cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
@@ -52,6 +79,7 @@ window['__onGCastApiAvailable'] = function (isAvailable) {
       if (event.sessionState === cast.framework.SessionState.SESSION_STARTED ||
           event.sessionState === cast.framework.SessionState.SESSION_RESUMED) {
         castSession = cast.framework.CastContext.getInstance().getCurrentSession();
+        castSession.addMessageListener(CAST_CHANNEL, onReceiverMessage);
         castBtn.classList.add('active');
         document.body.classList.add('casting');
         sendCastMessage({ scene: currentScene, mood: currentMood });

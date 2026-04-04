@@ -95,17 +95,30 @@ function showStatus(text) {
   el._timeout = setTimeout(() => el.classList.remove('visible'), 2000);
 }
 
-function setScene(index) {
+// Send state changes back to the sender
+function notifySender(data) {
+  try {
+    const ctx = cast.framework.CastReceiverContext.getInstance();
+    const senders = ctx.getSenders();
+    for (let i = 0; i < senders.length; i++) {
+      ctx.sendCustomMessage(CHANNEL, senders[i].id, data);
+    }
+  } catch (e) {}
+}
+
+function setScene(index, fromSender) {
   sceneIndex = ((index % sceneNames.length) + sceneNames.length) % sceneNames.length;
   switchScene(sceneNames[sceneIndex]);
   showSceneBar();
+  if (!fromSender) notifySender({ scene: sceneNames[sceneIndex] });
 }
 
-function setMood(index) {
+function setMood(index, fromSender) {
   moodIndex = ((index % moodNames.length) + moodNames.length) % moodNames.length;
   const name = moodNames[moodIndex];
   targetMood = MOODS[name];
   showMoodBar();
+  if (!fromSender) notifySender({ mood: name });
 }
 
 // Scene icons (matching sender UI)
@@ -241,6 +254,7 @@ document.addEventListener('keyup', (e) => {
         gardenInput.plant = true;
       } else {
         toggleAutoMood();
+        notifySender({ autoMood: autoMood });
         showStatus(autoMood ? 'auto mode on' : 'auto mode off');
       }
     }
@@ -265,11 +279,11 @@ castContext.addCustomMessageListener(CHANNEL, (event) => {
   const data = event.data;
   if (data.scene) {
     const idx = sceneNames.indexOf(data.scene);
-    if (idx !== -1) setScene(idx);
+    if (idx !== -1) setScene(idx, true);
   }
   if (data.mood) {
     const idx = moodNames.indexOf(data.mood);
-    if (idx !== -1) setMood(idx);
+    if (idx !== -1) setMood(idx, true);
   }
   if (data.autoMood !== undefined) {
     autoMood = data.autoMood;
