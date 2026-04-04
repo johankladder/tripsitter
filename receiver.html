@@ -182,13 +182,13 @@ document.addEventListener('keydown', (e) => {
   }
 
   if (appMode === 'interactive') {
-    // Interactive mode: D-pad moves cursor, Enter places point
+    // Interactive mode: D-pad moves cursor, hold Enter to paint, tap to place
     switch (e.keyCode) {
       case 37: cursorKeys.left = true; break;
       case 39: cursorKeys.right = true; break;
       case 38: cursorKeys.up = true; break;
       case 40: cursorKeys.down = true; break;
-      case 13: placePoint(); break;
+      case 13: if (!e.repeat) paintStart(); break;
     }
   } else {
     // Ambient mode: D-pad cycles scenes/moods
@@ -212,6 +212,7 @@ document.addEventListener('keyup', (e) => {
       case 39: cursorKeys.right = false; break;
       case 38: cursorKeys.up = false; break;
       case 40: cursorKeys.down = false; break;
+      case 13: paintEnd(); break;
     }
   }
 });

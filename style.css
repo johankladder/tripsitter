@@ -380,6 +380,21 @@ body.cast-receiver .splash-cast-btn { display: none !important; }
   0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
   50% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.2; }
 }
+/* Painting state — brighter, larger glow */
+.constellation-cursor.painting::before {
+  width: 10px; height: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+.constellation-cursor.painting::after {
+  width: 28px; height: 28px;
+  border-color: rgba(255, 255, 255, 0.35);
+  animation: cursorPaintPulse 1s ease-in-out infinite;
+}
+@keyframes cursorPaintPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.3; }
+}
 
 /* ─── Casting mode (sender) ─── */
 body.casting canvas#main,

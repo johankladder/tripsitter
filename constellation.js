@@ -13,6 +13,16 @@ const constellationLines = [];
 const MAX_POINTS = 80;
 const CONNECT_DIST = 250;
 
+// Light painting state
+let paintHeld = false;
+let paintHoldStart = 0;
+const HOLD_THRESHOLD = 200; // ms before hold becomes a paint stroke
+let isPainting = false;
+const paintTrails = [];
+let currentTrail = null;
+const TRAIL_SAMPLE_DIST = 8; // min distance between trail samples
+const MAX_TRAILS = 40;
+
 // Drift and growth
 const driftField = { offsetX: 0, offsetY: 0 };
 
@@ -44,7 +54,7 @@ function placePoint() {
   const point = {
     x: cursor.x,
     y: cursor.y,
-    ox: cursor.x, // original position for drift reference
+    ox: cursor.x,
     oy: cursor.y,
     ci: Math.floor(Math.random() * 6),
     birth: globalTime,
@@ -71,6 +81,58 @@ function placePoint() {
   }
 }
 
+// ── Paint hold detection ──
+function paintStart() {
+  paintHeld = true;
+  paintHoldStart = globalTime;
+  isPainting = false;
+}
+
+function paintEnd() {
+  if (!paintHeld) return;
+  paintHeld = false;
+  if (!isPainting) {
+    // Short tap — place a point
+    placePoint();
+  } else {
+    // End current trail
+    if (currentTrail && currentTrail.points.length > 1) {
+      currentTrail = null;
+    }
+    isPainting = false;
+    if (cursorEl) cursorEl.classList.remove('painting');
+  }
+}
+
+function paintUpdate() {
+  if (!paintHeld) return;
+
+  // Check if hold has crossed threshold
+  if (!isPainting && (globalTime - paintHoldStart) >= HOLD_THRESHOLD) {
+    isPainting = true;
+    if (cursorEl) cursorEl.classList.add('painting');
+    // Start a new trail
+    if (paintTrails.length >= MAX_TRAILS) paintTrails.shift();
+    currentTrail = {
+      points: [{ x: cursor.x, y: cursor.y, ox: cursor.x, oy: cursor.y }],
+      ci: Math.floor(Math.random() * 6),
+      birth: globalTime,
+      phase: Math.random() * TWO_PI,
+    };
+    paintTrails.push(currentTrail);
+  }
+
+  // Sample trail points while painting
+  if (isPainting && currentTrail) {
+    const last = currentTrail.points[currentTrail.points.length - 1];
+    const dx = cursor.x - last.ox;
+    const dy = cursor.y - last.oy;
+    if (dx * dx + dy * dy >= TRAIL_SAMPLE_DIST * TRAIL_SAMPLE_DIST) {
+      currentTrail.points.push({ x: cursor.x, y: cursor.y, ox: cursor.x, oy: cursor.y });
+    }
+  }
+}
+
 function moveCursor(dx, dy) {
   cursor.x = Math.max(20, Math.min(W - 20, cursor.x + dx));
   cursor.y = Math.max(20, Math.min(H - 20, cursor.y + dy));
@@ -91,6 +153,9 @@ function drawConstellation(t, dt) {
   if (cursorKeys.up) moveCursor(0, -moveAmount);
   if (cursorKeys.down) moveCursor(0, moveAmount);
 
+  // Update paint hold state
+  paintUpdate();
+
   // Update point positions with drift
   for (let i = 0; i < constellationPoints.length; i++) {
     const p = constellationPoints[i];
@@ -100,9 +165,67 @@ function drawConstellation(t, dt) {
     p.y = p.oy + ny;
   }
 
+  // Update trail point positions with drift
+  for (let i = 0; i < paintTrails.length; i++) {
+    const trail = paintTrails[i];
+    for (let j = 0; j < trail.points.length; j++) {
+      const p = trail.points[j];
+      const nx = noise2D(p.ox * 0.002 + driftField.offsetX, p.oy * 0.002) * 20;
+      const ny = noise2D(p.oy * 0.002, p.ox * 0.002 + driftField.offsetY) * 20;
+      p.x = p.ox + nx;
+      p.y = p.oy + ny;
+    }
+  }
+
   ctx.globalCompositeOperation = 'screen';
 
-  // Draw lines — grow in from birth
+  // ── Draw paint trails ──
+  for (let i = 0; i < paintTrails.length; i++) {
+    const trail = paintTrails[i];
+    const pts = trail.points;
+    if (pts.length < 2) continue;
+
+    const c = _rcColors[trail.ci];
+    const age = t - trail.birth;
+    const breath = 0.5 + 0.3 * Math.sin(t * 0.0015 + trail.phase);
+
+    // Draw glow pass (wider, more transparent)
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let j = 1; j < pts.length; j++) {
+      // Smooth curve through points
+      if (j < pts.length - 1) {
+        const mx = (pts[j].x + pts[j + 1].x) / 2;
+        const my = (pts[j].y + pts[j + 1].y) / 2;
+        ctx.quadraticCurveTo(pts[j].x, pts[j].y, mx, my);
+      } else {
+        ctx.lineTo(pts[j].x, pts[j].y);
+      }
+    }
+    ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${breath * 0.08})`;
+    ctx.lineWidth = 12;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // Draw core pass (thinner, brighter)
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let j = 1; j < pts.length; j++) {
+      if (j < pts.length - 1) {
+        const mx = (pts[j].x + pts[j + 1].x) / 2;
+        const my = (pts[j].y + pts[j + 1].y) / 2;
+        ctx.quadraticCurveTo(pts[j].x, pts[j].y, mx, my);
+      } else {
+        ctx.lineTo(pts[j].x, pts[j].y);
+      }
+    }
+    ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${breath * 0.25})`;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+  }
+
+  // ── Draw constellation lines ──
   for (let i = 0; i < constellationLines.length; i++) {
     const line = constellationLines[i];
     const age = t - line.birth;
@@ -115,11 +238,9 @@ function drawConstellation(t, dt) {
     const ca = _rcColors[a.ci];
     const cb = _rcColors[b.ci];
 
-    // Interpolated end point for growth animation
     const ex = a.x + (b.x - a.x) * line.growProgress;
     const ey = a.y + (b.y - a.y) * line.growProgress;
 
-    // Pulsing opacity
     const pulse = 0.15 + 0.1 * Math.sin(t * 0.001 + i);
 
     ctx.beginPath();
@@ -131,20 +252,19 @@ function drawConstellation(t, dt) {
     grad.addColorStop(1, `rgba(${cb[0]},${cb[1]},${cb[2]},${pulse * 0.6})`);
     ctx.strokeStyle = grad;
     ctx.lineWidth = 1.5;
+    ctx.lineCap = 'round';
     ctx.stroke();
   }
 
-  // Draw points
+  // ── Draw points ──
   for (let i = 0; i < constellationPoints.length; i++) {
     const p = constellationPoints[i];
     const c = _rcColors[p.ci];
     const age = t - p.birth;
 
-    // Spawn scale animation
     const spawnScale = Math.min(1, age / 300);
     const sz = p.size * spawnScale;
 
-    // Breathing
     const breath = 0.6 + 0.4 * Math.sin(t * 0.002 + p.phase);
 
     // Glow
@@ -165,15 +285,17 @@ function drawConstellation(t, dt) {
     ctx.fill();
   }
 
-  // Draw faint cursor trail glow on canvas
+  // ── Cursor glow ──
   if (cursorEl) {
     const pc = _rcParticle;
-    const grad = ctx.createRadialGradient(cursor.x, cursor.y, 0, cursor.x, cursor.y, 40);
-    grad.addColorStop(0, `rgba(${pc[0]},${pc[1]},${pc[2]},0.08)`);
+    const glowSize = isPainting ? 60 : 40;
+    const glowAlpha = isPainting ? 0.15 : 0.08;
+    const grad = ctx.createRadialGradient(cursor.x, cursor.y, 0, cursor.x, cursor.y, glowSize);
+    grad.addColorStop(0, `rgba(${pc[0]},${pc[1]},${pc[2]},${glowAlpha})`);
     grad.addColorStop(1, `rgba(${pc[0]},${pc[1]},${pc[2]},0)`);
     ctx.fillStyle = grad;
     ctx.beginPath();
-    ctx.arc(cursor.x, cursor.y, 40, 0, TWO_PI);
+    ctx.arc(cursor.x, cursor.y, glowSize, 0, TWO_PI);
     ctx.fill();
   }
 

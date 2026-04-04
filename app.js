@@ -377,10 +377,16 @@ function returnToSplash() {
   // Clean up constellation cursor if it exists
   const cursorEl = document.querySelector('.constellation-cursor');
   if (cursorEl) cursorEl.remove();
-  // Reset constellation state
+  // Reset constellation and paint state
   if (typeof constellationPoints !== 'undefined') {
     constellationPoints.length = 0;
     constellationLines.length = 0;
+  }
+  if (typeof paintTrails !== 'undefined') {
+    paintTrails.length = 0;
+    isPainting = false;
+    paintHeld = false;
+    currentTrail = null;
   }
 }
 
@@ -439,7 +445,7 @@ if (!window._castReceiver) {
       case 'ArrowUp': cursorKeys.up = true; break;
       case 'ArrowDown': cursorKeys.down = true; break;
       case ' ':
-      case 'Enter': placePoint(); break;
+      case 'Enter': if (!e.repeat) paintStart(); break;
     }
   });
   document.addEventListener('keyup', (e) => {
@@ -449,17 +455,22 @@ if (!window._castReceiver) {
       case 'ArrowRight': cursorKeys.right = false; break;
       case 'ArrowUp': cursorKeys.up = false; break;
       case 'ArrowDown': cursorKeys.down = false; break;
+      case ' ':
+      case 'Enter': paintEnd(); break;
     }
   });
-  // Click to place points on sender
-  canvas.addEventListener('click', (e) => {
+  // Mouse: click to place, click-drag to paint
+  canvas.addEventListener('mousedown', (e) => {
     if (!started || appMode !== 'interactive') return;
     cursor.x = e.clientX;
     cursor.y = e.clientY;
     updateCursorEl();
-    placePoint();
+    paintStart();
   });
-  // Mouse movement updates cursor on sender
+  canvas.addEventListener('mouseup', (e) => {
+    if (!started || appMode !== 'interactive') return;
+    paintEnd();
+  });
   canvas.addEventListener('mousemove', (e) => {
     if (!started || appMode !== 'interactive') return;
     cursor.x = e.clientX;
