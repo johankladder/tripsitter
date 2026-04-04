@@ -348,6 +348,14 @@ _sceneBtns.forEach(btn => {
   });
 });
 
+// Mode buttons (sender panel)
+document.querySelectorAll('.mode-ctrl-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    switchToMode(btn.dataset.mode);
+    if (typeof sendCastMessage === 'function') sendCastMessage({ mode: btn.dataset.mode });
+  });
+});
+
 // Fullscreen
 const fullscreenBtn = document.getElementById('fullscreenBtn');
 if (fullscreenBtn) {
@@ -372,6 +380,41 @@ function startWithMode(mode) {
   } else if (mode === 'garden' && typeof initGarden === 'function') {
     initGarden();
   }
+}
+
+function switchToMode(mode) {
+  if (mode === appMode && started) return;
+
+  // Clean up current mode
+  if (appMode === 'interactive' && typeof organisms !== 'undefined' && organisms[0]) {
+    organisms[0] = null;
+    organisms[1] = null;
+    symbSpores.length = 0;
+    symbMergeZones.length = 0;
+  }
+  if (appMode === 'garden' && typeof gardenGrid !== 'undefined') {
+    gardenGrid = [];
+    gardenSpores = [];
+  }
+
+  // Start new mode
+  appMode = mode;
+  const overlay = document.getElementById('titleOverlay');
+  if (overlay) overlay.classList.add('hidden');
+  started = true;
+
+  if (mode === 'interactive' && typeof initSymbiosis === 'function') {
+    initSymbiosis();
+  } else if (mode === 'garden' && typeof initGarden === 'function') {
+    initGarden();
+  } else {
+    const controls = document.querySelector('.controls');
+    if (controls) controls.style.display = '';
+  }
+
+  // Update mode buttons
+  const modeBtns = document.querySelectorAll('.mode-ctrl-btn');
+  modeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
 }
 
 function returnToSplash() {

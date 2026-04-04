@@ -70,6 +70,9 @@ window['__onGCastApiAvailable'] = function (isAvailable) {
       const autoBtn = document.getElementById('autoMoodBtn');
       if (autoBtn) autoBtn.classList.toggle('active', autoMood);
     }
+    if (data.mode) {
+      switchToMode(data.mode);
+    }
   }
 
   // Listen for session changes

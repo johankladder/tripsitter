@@ -131,8 +131,37 @@ body.show-ui .panel { transform: translateY(0); opacity: 1; }
   display: grid;
   gap: 8px;
 }
+.modes-grid { grid-template-columns: repeat(3, 1fr); }
 .scenes-grid { grid-template-columns: repeat(4, 1fr); }
 .moods-grid { grid-template-columns: repeat(5, 1fr); }
+
+/* ─── Mode buttons ─── */
+.mode-ctrl-btn {
+  display: flex; align-items: center; justify-content: center;
+  padding: 10px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: all 0.4s ease;
+}
+.mode-ctrl-btn:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  transform: scale(1.03);
+}
+.mode-ctrl-btn.active {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+}
+.mode-ctrl-btn span {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 0.55rem; font-weight: 300;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  transition: color 0.4s ease;
+}
+.mode-ctrl-btn.active span { color: rgba(255, 255, 255, 0.7); }
 
 /* ─── Scene buttons ─── */
 .scene-btn {

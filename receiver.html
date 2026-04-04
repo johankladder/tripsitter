@@ -289,6 +289,10 @@ castContext.addCustomMessageListener(CHANNEL, (event) => {
     autoMood = data.autoMood;
     showStatus(autoMood ? 'auto mood on' : 'auto mood off');
   }
+  if (data.mode) {
+    switchToMode(data.mode);
+    showStatus(data.mode === 'interactive' ? 'symbiosis' : data.mode);
+  }
 });
 
 // Start the receiver with no default UI and no audio focus
