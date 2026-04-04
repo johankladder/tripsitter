@@ -55,6 +55,12 @@ The UI auto-hides after a few seconds so nothing gets in the way.
 
 Pure vanilla JavaScript and Canvas 2D — no frameworks, no build step, no dependencies. The entire app is under 105 KB uncompressed.
 
+## Support
+
+If you enjoy Tripsitter, consider buying me a coffee!
+
+<a href="https://buymeacoffee.com/johankladder"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee"></a>
+
 ## License
 
 MIT
