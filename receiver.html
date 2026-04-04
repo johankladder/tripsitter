@@ -172,18 +172,56 @@ function showMoodBar() {
   moodBarTimeout = setTimeout(() => moodBar.classList.remove('visible'), 3000);
 }
 
+// TV Remote: long-press Enter to switch modes
+const LONG_PRESS_MS = 1500;
+let enterDownAt = 0;
+let enterHandled = false;
+
+function switchMode() {
+  if (appMode === 'ambient') {
+    appMode = 'interactive';
+    initSymbiosis();
+    showStatus('symbiosis');
+  } else {
+    appMode = 'ambient';
+    // Clean up symbiosis
+    if (organisms[0]) {
+      organisms[0] = null;
+      organisms[1] = null;
+      symbSpores.length = 0;
+      symbMergeZones.length = 0;
+    }
+    const controls = document.querySelector('.controls');
+    if (controls) controls.style.display = '';
+    showStatus('ambient');
+  }
+}
+
 // TV Remote: D-pad controls — routes based on mode
 document.addEventListener('keydown', (e) => {
   if (!started) return; // Splash handles its own key events
 
+  // Enter: track press start for long-press detection
+  if (e.keyCode === 13) {
+    if (!e.repeat && enterDownAt === 0) {
+      enterDownAt = performance.now();
+      enterHandled = false;
+    }
+    // Check if held long enough
+    if (enterDownAt > 0 && !enterHandled && (performance.now() - enterDownAt) >= LONG_PRESS_MS) {
+      enterHandled = true;
+      switchMode();
+    }
+    return;
+  }
+
   if (appMode === 'interactive') {
-    // Interactive mode: D-pad feeds organisms, Enter triggers bloom
+    // Interactive mode: D-pad feeds organisms
     switch (e.keyCode) {
       case 37: symbInput.feedA = true; break;  // Left — feed organism A
       case 39: symbInput.feedB = true; break;  // Right — feed organism B
       case 38: symbInput.shiftUp = true; break;   // Up — shift colors
       case 40: symbInput.shiftDown = true; break;  // Down — shift colors
-      case 13: if (!e.repeat) symbInput.bloom = true; break; // Enter — bloom
     }
   } else {
     // Ambient mode: D-pad cycles scenes/moods
@@ -192,15 +230,25 @@ document.addEventListener('keydown', (e) => {
       case 39: setScene(sceneIndex + 1); break;
       case 38: setMood(moodIndex - 1); break;
       case 40: setMood(moodIndex + 1); break;
-      case 13:
-        toggleAutoMood();
-        showStatus(autoMood ? 'auto mode on' : 'auto mode off');
-        break;
     }
   }
 });
 
-// No keyup needed for symbiosis — inputs are one-shot flags
+document.addEventListener('keyup', (e) => {
+  if (e.keyCode === 13) {
+    // Short press — do the normal action if not already handled as long-press
+    if (!enterHandled && enterDownAt > 0) {
+      if (appMode === 'interactive') {
+        symbInput.bloom = true;
+      } else {
+        toggleAutoMood();
+        showStatus(autoMood ? 'auto mode on' : 'auto mode off');
+      }
+    }
+    enterDownAt = 0;
+    enterHandled = false;
+  }
+});
 
 // Cast Receiver SDK
 const castContext = cast.framework.CastReceiverContext.getInstance();

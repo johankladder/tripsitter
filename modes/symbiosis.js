@@ -387,7 +387,7 @@ function drawSymbiosis(t, dt) {
     for (let i = 0; i < org.haze.length; i++) {
       const h = org.haze[i];
       const c = _rcColors[h.ci % 6];
-      const breath = (0.012 + 0.006 * Math.sin(t * 0.0002 + i * 0.7)) * h.opacity;
+      const breath = (0.035 + 0.015 * Math.sin(t * 0.0002 + i * 0.7)) * h.opacity;
       const grad = ctx.createRadialGradient(h.x, h.y, 0, h.x, h.y, h.r);
       grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${breath})`);
       grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
@@ -418,33 +418,33 @@ function drawSymbiosis(t, dt) {
       }
       ctx.lineTo(td.points[td.points.length - 1].x, td.points[td.points.length - 1].y);
 
-      const baseAlpha = (0.04 + org.energy * 0.04) * td.opacity * energyPulse * flicker;
+      const baseAlpha = (0.12 + org.energy * 0.12) * td.opacity * energyPulse * flicker;
       ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${baseAlpha})`;
       ctx.lineWidth = td.thickness;
       ctx.lineCap = 'round';
       ctx.stroke();
 
       // Glow pass
-      ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${baseAlpha * 0.3})`;
-      ctx.lineWidth = td.thickness * 4;
+      ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${baseAlpha * 0.4})`;
+      ctx.lineWidth = td.thickness * 5;
       ctx.stroke();
 
       // Growing tip glow
       if (td.alive) {
         const tip = td.points[td.points.length - 1];
         const tipGrad = ctx.createRadialGradient(tip.x, tip.y, 0, tip.x, tip.y, 12);
-        tipGrad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${0.15 * org.energy * flicker})`);
+        tipGrad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${0.35 * org.energy * flicker})`);
         tipGrad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
         ctx.fillStyle = tipGrad;
         ctx.beginPath();
-        ctx.arc(tip.x, tip.y, 12, 0, TWO_PI);
+        ctx.arc(tip.x, tip.y, 16, 0, TWO_PI);
         ctx.fill();
       }
     }
 
     // ── Draw core glow at organism center ──
-    const coreR = 30 + org.energy * 40;
-    const coreAlpha = (0.04 + org.energy * 0.08) * energyPulse * flicker;
+    const coreR = 35 + org.energy * 50;
+    const coreAlpha = (0.1 + org.energy * 0.15) * energyPulse * flicker;
     const ci = org.colorOffset % 6;
     const cc = _rcColors[ci];
     const coreGrad = ctx.createRadialGradient(org.cx, org.cy, 0, org.cx, org.cy, coreR);
@@ -468,7 +468,7 @@ function drawSymbiosis(t, dt) {
     const mg = (cA[1] + cB[1]) / 2;
     const mb = (cA[2] + cB[2]) / 2;
     const pulse = 0.5 + 0.5 * Math.sin(t * 0.002 + i);
-    const alpha = 0.06 * pulse * mz.opacity;
+    const alpha = 0.15 * pulse * mz.opacity;
 
     if (mz.merge) {
       // Harmonious blend — concentric rings
@@ -504,7 +504,7 @@ function drawSymbiosis(t, dt) {
       const b = org.blooms[i];
       const c = _rcColors[b.ci % 6];
       const pulse = 0.6 + 0.4 * Math.sin(t * b.pulseSpeed + b.phase);
-      const alpha = 0.07 * pulse * b.opacity;
+      const alpha = 0.18 * pulse * b.opacity;
 
       for (let ring = 0; ring < 3; ring++) {
         const rr = b.r * (0.4 + ring * 0.35);
@@ -521,7 +521,7 @@ function drawSymbiosis(t, dt) {
       // Bright center
       ctx.beginPath();
       ctx.arc(b.x, b.y, 2.5, 0, TWO_PI);
-      ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.15 * pulse * b.opacity})`;
+      ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.4 * pulse * b.opacity})`;
       ctx.fill();
     }
   }
@@ -532,7 +532,7 @@ function drawSymbiosis(t, dt) {
     const sp = symbSpores[i];
     const lr = sp.life / sp.maxLife;
     let alpha = lr < 0.1 ? lr / 0.1 : lr > 0.7 ? (1 - lr) / 0.3 : 1;
-    alpha *= 0.3 + 0.15 * Math.sin(t * 0.003 + i * 2);
+    alpha *= 0.5 + 0.2 * Math.sin(t * 0.003 + i * 2);
     const c = _rcColors[sp.ci % 6];
 
     ctx.beginPath();
@@ -543,7 +543,7 @@ function drawSymbiosis(t, dt) {
     if (sp.sz > 1) {
       ctx.beginPath();
       ctx.arc(sp.x, sp.y, sp.sz * 3, 0, TWO_PI);
-      ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha * 0.1})`;
+      ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha * 0.2})`;
       ctx.fill();
     }
   }
