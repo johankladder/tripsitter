@@ -272,29 +272,33 @@ function animate(timestamp) {
   ctx.fillStyle = _bgFillStyle;
   ctx.fillRect(0, 0, W, H);
 
-  // Scene crossfade
-  if (fadingOut) {
-    sceneAlpha -= dt * 0.002;
-    if (sceneAlpha <= 0) {
-      sceneAlpha = 0;
-      currentScene = nextScene;
-      fadingOut = false;
-      nextScene = null;
-      // Defer heavy init so it doesn't block scroll animations
-      sceneInitPending = true;
+  if (appMode === 'interactive') {
+    // Interactive mode — constellation draws on top of background
+    if (typeof drawConstellation === 'function') drawConstellation(globalTime, dt);
+  } else {
+    // Ambient mode — scene crossfade
+    if (fadingOut) {
+      sceneAlpha -= dt * 0.002;
+      if (sceneAlpha <= 0) {
+        sceneAlpha = 0;
+        currentScene = nextScene;
+        fadingOut = false;
+        nextScene = null;
+        sceneInitPending = true;
+      }
+    } else if (sceneInitPending) {
+      SCENES[currentScene].init();
+      sceneInitPending = false;
+    } else if (sceneAlpha < 1) {
+      sceneAlpha += dt * 0.002;
+      if (sceneAlpha > 1) sceneAlpha = 1;
     }
-  } else if (sceneInitPending) {
-    SCENES[currentScene].init();
-    sceneInitPending = false;
-  } else if (sceneAlpha < 1) {
-    sceneAlpha += dt * 0.002;
-    if (sceneAlpha > 1) sceneAlpha = 1;
-  }
 
-  ctx.save();
-  ctx.globalAlpha = sceneAlpha;
-  SCENES[currentScene].draw(globalTime, dt);
-  ctx.restore();
+    ctx.save();
+    ctx.globalAlpha = sceneAlpha;
+    SCENES[currentScene].draw(globalTime, dt);
+    ctx.restore();
+  }
 
   requestAnimationFrame(animate);
 }
@@ -350,15 +354,101 @@ if (fullscreenBtn) {
   });
 }
 
-// Start
-const titleOverlay = document.getElementById('titleOverlay');
-function start() {
-  if (titleOverlay) titleOverlay.classList.add('hidden');
+// ══════════════════════════════════════════════════════
+// MODE (ambient or interactive)
+// ══════════════════════════════════════════════════════
+let appMode = 'ambient'; // 'ambient' or 'interactive'
+
+function startWithMode(mode) {
+  appMode = mode;
+  const overlay = document.getElementById('titleOverlay');
+  if (overlay) overlay.classList.add('hidden');
   started = true;
-}
-if (titleOverlay) {
-  titleOverlay.addEventListener('click', start);
-  if (!window._castReceiver) {
-    document.addEventListener('keydown', () => { if (!started) start(); });
+  if (mode === 'interactive' && typeof initConstellation === 'function') {
+    initConstellation();
   }
+}
+
+// Splash screen — wire up mode selection
+function initSplash() {
+  const isReceiver = window._castReceiver;
+  const modeBtns = document.querySelectorAll('.mode-btn');
+  let selectedMode = 'ambient';
+
+  modeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!started) {
+        modeBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedMode = btn.dataset.mode;
+        if (!isReceiver) startWithMode(selectedMode);
+      }
+    });
+  });
+
+  if (isReceiver) {
+    document.addEventListener('keydown', (e) => {
+      if (started) return;
+      if (e.keyCode === 37 || e.keyCode === 39) {
+        selectedMode = selectedMode === 'ambient' ? 'interactive' : 'ambient';
+        modeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === selectedMode));
+      } else if (e.keyCode === 13) {
+        startWithMode(selectedMode);
+      }
+    });
+  }
+}
+
+// If splash is already inlined (receiver), wire it up directly.
+// Otherwise fetch it (sender).
+if (document.getElementById('titleOverlay')) {
+  initSplash();
+} else {
+  fetch('splash.html')
+    .then(r => r.text())
+    .then(html => {
+      document.body.insertAdjacentHTML('beforeend', html);
+      const subtitle = document.getElementById('splashSubtitle');
+      if (subtitle) subtitle.textContent = 'select a mode to begin';
+      initSplash();
+    });
+}
+
+// Sender: keyboard + mouse support for interactive mode
+if (!window._castReceiver) {
+  document.addEventListener('keydown', (e) => {
+    if (!started || appMode !== 'interactive') return;
+    switch (e.key) {
+      case 'ArrowLeft': cursorKeys.left = true; break;
+      case 'ArrowRight': cursorKeys.right = true; break;
+      case 'ArrowUp': cursorKeys.up = true; break;
+      case 'ArrowDown': cursorKeys.down = true; break;
+      case ' ':
+      case 'Enter': placePoint(); break;
+    }
+  });
+  document.addEventListener('keyup', (e) => {
+    if (appMode !== 'interactive') return;
+    switch (e.key) {
+      case 'ArrowLeft': cursorKeys.left = false; break;
+      case 'ArrowRight': cursorKeys.right = false; break;
+      case 'ArrowUp': cursorKeys.up = false; break;
+      case 'ArrowDown': cursorKeys.down = false; break;
+    }
+  });
+  // Click to place points on sender
+  canvas.addEventListener('click', (e) => {
+    if (!started || appMode !== 'interactive') return;
+    cursor.x = e.clientX;
+    cursor.y = e.clientY;
+    updateCursorEl();
+    placePoint();
+  });
+  // Mouse movement updates cursor on sender
+  canvas.addEventListener('mousemove', (e) => {
+    if (!started || appMode !== 'interactive') return;
+    cursor.x = e.clientX;
+    cursor.y = e.clientY;
+    updateCursorEl();
+  });
 }

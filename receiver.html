@@ -26,10 +26,19 @@
 <!-- Mood indicator bar (bottom) -->
 <div class="mood-bar" id="moodBar"></div>
 
-<!-- Splash screen -->
+<!-- Splash screen (inlined for Chromecast reliability) -->
 <div class="title-overlay" id="titleOverlay">
   <h1>tripsitter</h1>
-  <p>press any button to begin</p>
+  <div class="mode-select" id="modeSelect">
+    <button class="mode-btn active" data-mode="ambient">ambient</button>
+    <span class="mode-divider">&middot;</span>
+    <button class="mode-btn" data-mode="interactive">interactive</button>
+  </div>
+  <p class="mode-hint">use d-pad to select, enter to start</p>
+  <button class="splash-cast-btn" id="splashCastBtn" title="Cast to TV" style="display:none;">
+    <svg viewBox="0 0 24 24"><path d="M1 18v3h3c0-1.66-1.34-3-3-3zm0-4v2c2.76 0 5 2.24 5 5h2c0-3.87-3.13-7-7-7zm0-4v2c4.97 0 9 4.03 9 9h2c0-6.08-4.93-11-11-11zm20-7H3c-1.1 0-2 .9-2 2v3h2V5h18v14h-7v2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+    <span>cast to tv</span>
+  </button>
   <span class="credit">by Johan Kladder</span>
 </div>
 
@@ -50,18 +59,17 @@ window._castReceiver = true;
 <script src="scenes/plasma.js"></script>
 <script src="scenes/mycelium.js"></script>
 <script src="scenes/threads.js"></script>
+<script src="constellation.js"></script>
 <script src="boot.js"></script>
 <script>
 // ══════════════════════════════════════════════════════
 // CHROMECAST RECEIVER
 // ══════════════════════════════════════════════════════
 
-// Dismiss splash on any interaction
+// Dismiss splash — delegates to startWithMode from app.js
 function dismissSplash() {
   if (started) return;
-  const overlay = document.getElementById('titleOverlay');
-  if (overlay) overlay.classList.add('hidden');
-  started = true;
+  startWithMode(appMode || 'ambient');
 }
 
 // Force re-init canvas in case sizing was off
@@ -163,29 +171,42 @@ function showMoodBar() {
   moodBarTimeout = setTimeout(() => moodBar.classList.remove('visible'), 3000);
 }
 
-// TV Remote: D-pad controls
+// TV Remote: D-pad controls — routes based on mode
 document.addEventListener('keydown', (e) => {
-  if (!started) {
-    dismissSplash();
-    return; // First press only dismisses splash
+  if (!started) return; // Splash handles its own key events
+
+  if (appMode === 'interactive') {
+    // Interactive mode: D-pad moves cursor, Enter places point
+    switch (e.keyCode) {
+      case 37: cursorKeys.left = true; break;
+      case 39: cursorKeys.right = true; break;
+      case 38: cursorKeys.up = true; break;
+      case 40: cursorKeys.down = true; break;
+      case 13: placePoint(); break;
+    }
+  } else {
+    // Ambient mode: D-pad cycles scenes/moods
+    switch (e.keyCode) {
+      case 37: setScene(sceneIndex - 1); break;
+      case 39: setScene(sceneIndex + 1); break;
+      case 38: setMood(moodIndex - 1); break;
+      case 40: setMood(moodIndex + 1); break;
+      case 13:
+        toggleAutoMood();
+        showStatus(autoMood ? 'auto mode on' : 'auto mode off');
+        break;
+    }
   }
-  switch (e.keyCode) {
-    case 37: // Left - previous scene
-      setScene(sceneIndex - 1);
-      break;
-    case 39: // Right - next scene
-      setScene(sceneIndex + 1);
-      break;
-    case 38: // Up - previous mood
-      setMood(moodIndex - 1);
-      break;
-    case 40: // Down - next mood
-      setMood(moodIndex + 1);
-      break;
-    case 13: // Enter - toggle auto mood
-      toggleAutoMood();
-      showStatus(autoMood ? 'auto mode on' : 'auto mode off');
-      break;
+});
+
+document.addEventListener('keyup', (e) => {
+  if (appMode === 'interactive') {
+    switch (e.keyCode) {
+      case 37: cursorKeys.left = false; break;
+      case 39: cursorKeys.right = false; break;
+      case 38: cursorKeys.up = false; break;
+      case 40: cursorKeys.down = false; break;
+    }
   }
 });
 

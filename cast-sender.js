@@ -25,6 +25,26 @@ window['__onGCastApiAvailable'] = function (isAvailable) {
   const castBtn = document.getElementById('castBtn');
   castBtn.style.display = '';
 
+  // Show splash cast button too (if splash is loaded)
+  function showSplashCastBtn() {
+    const splashCastBtn = document.getElementById('splashCastBtn');
+    if (splashCastBtn) {
+      splashCastBtn.style.display = '';
+      splashCastBtn.addEventListener('click', () => {
+        cast.framework.CastContext.getInstance().requestSession();
+      });
+    }
+  }
+  showSplashCastBtn();
+  // Also try after splash loads (it's fetched async)
+  const observer = new MutationObserver(() => {
+    if (document.getElementById('splashCastBtn')) {
+      showSplashCastBtn();
+      observer.disconnect();
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
   // Listen for session changes
   cast.framework.CastContext.getInstance().addEventListener(
     cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
