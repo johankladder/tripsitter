@@ -183,35 +183,7 @@ let enterHandled = false;
 const modeOrder = ['ambient', 'interactive', 'garden'];
 
 function switchMode() {
-  const curIdx = modeOrder.indexOf(appMode);
-  const nextIdx = (curIdx + 1) % modeOrder.length;
-  const nextMode = modeOrder[nextIdx];
-
-  // Clean up current mode
-  if (appMode === 'interactive' && organisms[0]) {
-    organisms[0] = null;
-    organisms[1] = null;
-    symbSpores.length = 0;
-    symbMergeZones.length = 0;
-  }
-  if (appMode === 'garden') {
-    gardenGrid = [];
-    gardenSpores = [];
-  }
-
-  appMode = nextMode;
-
-  // Init new mode
-  if (nextMode === 'interactive') {
-    initSymbiosis();
-  } else if (nextMode === 'garden') {
-    initGarden();
-  } else {
-    const controls = document.querySelector('.controls');
-    if (controls) controls.style.display = '';
-  }
-
-  showStatus(nextMode === 'interactive' ? 'symbiosis' : nextMode);
+  returnToSplash();
 }
 
 // TV Remote: D-pad controls — routes based on mode
