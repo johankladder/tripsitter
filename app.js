@@ -273,8 +273,8 @@ function animate(timestamp) {
   ctx.fillRect(0, 0, W, H);
 
   if (appMode === 'interactive') {
-    // Interactive mode — constellation draws on top of background
-    if (typeof drawConstellation === 'function') drawConstellation(globalTime, dt);
+    // Interactive mode — symbiosis draws on top of background
+    if (typeof drawSymbiosis === 'function') drawSymbiosis(globalTime, dt);
   } else {
     // Ambient mode — scene crossfade
     if (fadingOut) {
@@ -364,8 +364,8 @@ function startWithMode(mode) {
   const overlay = document.getElementById('titleOverlay');
   if (overlay) overlay.classList.add('hidden');
   started = true;
-  if (mode === 'interactive' && typeof initConstellation === 'function') {
-    initConstellation();
+  if (mode === 'interactive' && typeof initSymbiosis === 'function') {
+    initSymbiosis();
   }
 }
 
@@ -374,19 +374,12 @@ function returnToSplash() {
   appMode = 'ambient';
   const overlay = document.getElementById('titleOverlay');
   if (overlay) overlay.classList.remove('hidden');
-  // Clean up constellation cursor if it exists
-  const cursorEl = document.querySelector('.constellation-cursor');
-  if (cursorEl) cursorEl.remove();
-  // Reset constellation and paint state
-  if (typeof constellationPoints !== 'undefined') {
-    constellationPoints.length = 0;
-    constellationLines.length = 0;
-  }
-  if (typeof paintTrails !== 'undefined') {
-    paintTrails.length = 0;
-    isPainting = false;
-    paintHeld = false;
-    currentTrail = null;
+  // Clean up symbiosis state
+  if (typeof organisms !== 'undefined' && organisms[0]) {
+    organisms[0] = null;
+    organisms[1] = null;
+    symbSpores.length = 0;
+    symbMergeZones.length = 0;
   }
 }
 
@@ -435,46 +428,60 @@ if (document.getElementById('titleOverlay')) {
     });
 }
 
-// Sender: keyboard + mouse support for interactive mode
+// Sender: keyboard + touch support for interactive mode (symbiosis)
 if (!window._castReceiver) {
   document.addEventListener('keydown', (e) => {
     if (!started || appMode !== 'interactive') return;
     switch (e.key) {
-      case 'ArrowLeft': cursorKeys.left = true; break;
-      case 'ArrowRight': cursorKeys.right = true; break;
-      case 'ArrowUp': cursorKeys.up = true; break;
-      case 'ArrowDown': cursorKeys.down = true; break;
+      case 'ArrowLeft': symbInput.feedA = true; break;
+      case 'ArrowRight': symbInput.feedB = true; break;
+      case 'ArrowUp': symbInput.shiftUp = true; break;
+      case 'ArrowDown': symbInput.shiftDown = true; break;
       case ' ':
-      case 'Enter': if (!e.repeat) paintStart(); break;
+      case 'Enter': if (!e.repeat) symbInput.bloom = true; break;
     }
   });
-  document.addEventListener('keyup', (e) => {
-    if (appMode !== 'interactive') return;
-    switch (e.key) {
-      case 'ArrowLeft': cursorKeys.left = false; break;
-      case 'ArrowRight': cursorKeys.right = false; break;
-      case 'ArrowUp': cursorKeys.up = false; break;
-      case 'ArrowDown': cursorKeys.down = false; break;
-      case ' ':
-      case 'Enter': paintEnd(); break;
+
+  // Touch/click: tap left half feeds A, right half feeds B, double-tap blooms
+  let lastTapTime = 0;
+  function handleSymbTap(x) {
+    if (!started || appMode !== 'interactive') return;
+    const now = Date.now();
+    if (now - lastTapTime < 300) {
+      // Double-tap — bloom
+      symbInput.bloom = true;
+      lastTapTime = 0;
+    } else {
+      // Single tap — feed left or right organism
+      if (x < W / 2) symbInput.feedA = true;
+      else symbInput.feedB = true;
+      lastTapTime = now;
+    }
+  }
+
+  // Swipe detection for color shift
+  let touchStartY = 0;
+  canvas.addEventListener('touchstart', (e) => {
+    if (!started || appMode !== 'interactive') return;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  canvas.addEventListener('touchend', (e) => {
+    if (!started || appMode !== 'interactive') return;
+    const touch = e.changedTouches[0];
+    const dy = touchStartY - touch.clientY;
+    if (Math.abs(dy) > 50) {
+      // Swipe up/down — shift colors
+      if (dy > 0) symbInput.shiftUp = true;
+      else symbInput.shiftDown = true;
+    } else {
+      // Tap
+      handleSymbTap(touch.clientX);
     }
   });
-  // Mouse: click to place, click-drag to paint
-  canvas.addEventListener('mousedown', (e) => {
+
+  canvas.addEventListener('click', (e) => {
     if (!started || appMode !== 'interactive') return;
-    cursor.x = e.clientX;
-    cursor.y = e.clientY;
-    updateCursorEl();
-    paintStart();
-  });
-  canvas.addEventListener('mouseup', (e) => {
-    if (!started || appMode !== 'interactive') return;
-    paintEnd();
-  });
-  canvas.addEventListener('mousemove', (e) => {
-    if (!started || appMode !== 'interactive') return;
-    cursor.x = e.clientX;
-    cursor.y = e.clientY;
-    updateCursorEl();
+    handleSymbTap(e.clientX);
   });
 }
