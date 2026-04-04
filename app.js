@@ -369,6 +369,21 @@ function startWithMode(mode) {
   }
 }
 
+function returnToSplash() {
+  started = false;
+  appMode = 'ambient';
+  const overlay = document.getElementById('titleOverlay');
+  if (overlay) overlay.classList.remove('hidden');
+  // Clean up constellation cursor if it exists
+  const cursorEl = document.querySelector('.constellation-cursor');
+  if (cursorEl) cursorEl.remove();
+  // Reset constellation state
+  if (typeof constellationPoints !== 'undefined') {
+    constellationPoints.length = 0;
+    constellationLines.length = 0;
+  }
+}
+
 // Splash screen — wire up mode selection
 function initSplash() {
   const isReceiver = window._castReceiver;

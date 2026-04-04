@@ -175,6 +175,12 @@ function showMoodBar() {
 document.addEventListener('keydown', (e) => {
   if (!started) return; // Splash handles its own key events
 
+  // Back button (keyCode 8 = Backspace) returns to splash
+  if (e.keyCode === 8) {
+    returnToSplash();
+    return;
+  }
+
   if (appMode === 'interactive') {
     // Interactive mode: D-pad moves cursor, Enter places point
     switch (e.keyCode) {
