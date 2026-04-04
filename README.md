@@ -2,25 +2,30 @@
   <img src="images/logo.jpg" width="100%" alt="Tripsitter">
 </p>
 
-**Immersive visual experiences for your screen and TV.**
+<p align="center">
+  <strong>Turn your screen into a living painting.</strong>
+  <br>
+  <br>
+  <a href="https://johankladder.github.io/tripsitter/"><strong>Launch Tripsitter</strong></a>
+  &nbsp;&middot;&nbsp;
+  <a href="https://buymeacoffee.com/johankladder">Buy me a coffee</a>
+</p>
 
-A browser-based visualizer that renders calming, psychedelic animations — perfect for meditation, relaxation, parties, or just zoning out. Cast it to your TV with Chromecast and let the visuals flow.
+<br>
 
-**[Launch Tripsitter](https://johankladder.github.io/tripsitter/)**
+Tripsitter is a browser-based visualizer that renders calming, psychedelic animations — perfect for meditation, relaxation, parties, or just zoning out. Cast it to your TV with Chromecast and let the visuals flow. No installs, no accounts, no dependencies — just open and go.
 
 <p align="center">
   <img src="images/receiver.gif" width="100%" alt="Tripsitter preview showing scene and mood switching">
 </p>
 
-## Features
+---
 
-- **Three modes** — Choose between **Ambient** for lean-back visuals, **Symbiosis** for interactive play, and **Garden** for a meditative planting experience. Pick your mode from the splash screen.
-- **12 handcrafted scenes** — Deep ocean, cosmos, mandala, liquid, waves, kaleidoscope, fireflies, spiral, rain, ink, mycelium, and threads. Each one is unique with organic, noise-driven animations.
-- **10 color moods** — Ocean, aurora, ember, dream, forest, sunset, ice, neon, midnight, and rose. Moods transition smoothly so the vibe never breaks.
-- **Auto mode** — Sit back and let scenes and moods cycle automatically.
-- **Chromecast support** — Cast directly to your TV. Use D-pad controls to navigate scenes and moods. Changes sync both ways between your phone and the TV. Long-press Enter to return to the splash screen.
-- **Fullscreen** — One click for a distraction-free experience.
-- **Zero setup** — No installs, no accounts, no dependencies. Just open the link and go.
+## Three ways to experience it
+
+### Ambient
+
+Lean back and watch. Pick from **12 handcrafted scenes** — deep ocean, cosmos, mandala, liquid, waves, kaleidoscope, fireflies, spiral, rain, ink, mycelium, and threads. Pair them with **10 color moods** that transition smoothly so the vibe never breaks. Or turn on **auto mode** and let it surprise you.
 
 <p align="center">
   <img src="images/deep.jpg" width="49%" alt="Deep Ocean scene">
@@ -41,23 +46,33 @@ Two living organisms compete for energy on opposite sides of the screen. Feed th
 
 ### Garden
 
-Plant seeds on a grid and watch them grow into blooms with five distinct shapes — petals, spirals, stars, dandelions, and lotuses. Blooms spread tendrils to neighbors, burst into spores that seed new life, and eventually fade away. No goals, no fail state — just grow things.
+Plant seeds and watch them grow into blooms — petals, spirals, stars, dandelions, and lotuses. Blooms spread tendrils to neighbors, burst into spores that seed new life, and eventually fade away. No goals, no fail state — just grow things.
 
-## How to use
+---
 
-1. Open the [live site](https://johankladder.github.io/tripsitter/)
-2. Choose a mode — **Ambient**, **Symbiosis**, or **Garden**
-3. **Ambient:** Pick a scene and mood from the bottom panel, or enable auto mode and let it surprise you
-4. **Symbiosis:** Use keyboard arrows or touch to feed organisms and trigger blooms
-5. **Garden:** Move the cursor with arrows and press Enter/Space to plant seeds
-6. Go fullscreen for the best experience
-7. Optional: cast to your TV using the Chromecast button
+## Cast to your TV
 
-The UI auto-hides after a few seconds so nothing gets in the way.
+Tripsitter has built-in Chromecast support. Cast directly from your browser and use your phone as a remote — switch scenes, moods, and modes. Changes sync both ways, so you can control from your phone or the TV remote.
+
+> **TV remote:** D-pad changes scenes and moods. Short-press Enter for actions. Long-press Enter to return to the mode selector.
+
+---
+
+## Getting started
+
+1. Open the **[live site](https://johankladder.github.io/tripsitter/)**
+2. Pick a mode — **Ambient**, **Symbiosis**, or **Garden**
+3. Go fullscreen and enjoy
+
+That's it. The UI auto-hides after a few seconds so nothing gets in the way.
+
+---
 
 ## Tech
 
 Pure vanilla JavaScript and Canvas 2D — no frameworks, no build step, no dependencies.
+
+---
 
 ## Support
 
