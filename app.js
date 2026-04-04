@@ -275,6 +275,9 @@ function animate(timestamp) {
   if (appMode === 'interactive') {
     // Interactive mode — symbiosis draws on top of background
     if (typeof drawSymbiosis === 'function') drawSymbiosis(globalTime, dt);
+  } else if (appMode === 'garden') {
+    // Garden mode — grid planting
+    if (typeof drawGarden === 'function') drawGarden(globalTime, dt);
   } else {
     // Ambient mode — scene crossfade
     if (fadingOut) {
@@ -357,7 +360,7 @@ if (fullscreenBtn) {
 // ══════════════════════════════════════════════════════
 // MODE (ambient or interactive)
 // ══════════════════════════════════════════════════════
-let appMode = 'ambient'; // 'ambient' or 'interactive'
+let appMode = 'ambient'; // 'ambient', 'interactive', or 'garden'
 
 function startWithMode(mode) {
   appMode = mode;
@@ -366,6 +369,8 @@ function startWithMode(mode) {
   started = true;
   if (mode === 'interactive' && typeof initSymbiosis === 'function') {
     initSymbiosis();
+  } else if (mode === 'garden' && typeof initGarden === 'function') {
+    initGarden();
   }
 }
 
@@ -381,6 +386,13 @@ function returnToSplash() {
     symbSpores.length = 0;
     symbMergeZones.length = 0;
   }
+  // Clean up garden state
+  if (typeof gardenGrid !== 'undefined') {
+    gardenGrid = [];
+    gardenSpores = [];
+  }
+  const controls = document.querySelector('.controls');
+  if (controls) controls.style.display = '';
 }
 
 // Splash screen — wire up mode selection
@@ -401,10 +413,13 @@ function initSplash() {
   });
 
   if (isReceiver) {
+    const splashModes = ['ambient', 'interactive', 'garden'];
     document.addEventListener('keydown', (e) => {
       if (started) return;
       if (e.keyCode === 37 || e.keyCode === 39) {
-        selectedMode = selectedMode === 'ambient' ? 'interactive' : 'ambient';
+        const dir = e.keyCode === 39 ? 1 : -1;
+        const idx = splashModes.indexOf(selectedMode);
+        selectedMode = splashModes[(idx + dir + splashModes.length) % splashModes.length];
         modeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === selectedMode));
       } else if (e.keyCode === 13) {
         startWithMode(selectedMode);
@@ -428,17 +443,28 @@ if (document.getElementById('titleOverlay')) {
     });
 }
 
-// Sender: keyboard + touch support for interactive mode (symbiosis)
+// Sender: keyboard + touch support for interactive modes
 if (!window._castReceiver) {
   document.addEventListener('keydown', (e) => {
-    if (!started || appMode !== 'interactive') return;
-    switch (e.key) {
-      case 'ArrowLeft': symbInput.feedA = true; break;
-      case 'ArrowRight': symbInput.feedB = true; break;
-      case 'ArrowUp': symbInput.shiftUp = true; break;
-      case 'ArrowDown': symbInput.shiftDown = true; break;
-      case ' ':
-      case 'Enter': if (!e.repeat) symbInput.bloom = true; break;
+    if (!started) return;
+    if (appMode === 'interactive') {
+      switch (e.key) {
+        case 'ArrowLeft': symbInput.feedA = true; break;
+        case 'ArrowRight': symbInput.feedB = true; break;
+        case 'ArrowUp': symbInput.shiftUp = true; break;
+        case 'ArrowDown': symbInput.shiftDown = true; break;
+        case ' ':
+        case 'Enter': if (!e.repeat) symbInput.bloom = true; break;
+      }
+    } else if (appMode === 'garden') {
+      switch (e.key) {
+        case 'ArrowLeft': gardenInput.left = true; break;
+        case 'ArrowRight': gardenInput.right = true; break;
+        case 'ArrowUp': gardenInput.up = true; break;
+        case 'ArrowDown': gardenInput.down = true; break;
+        case ' ':
+        case 'Enter': if (!e.repeat) gardenInput.plant = true; break;
+      }
     }
   });
 
@@ -462,26 +488,44 @@ if (!window._castReceiver) {
   // Swipe detection for color shift
   let touchStartY = 0;
   canvas.addEventListener('touchstart', (e) => {
-    if (!started || appMode !== 'interactive') return;
+    if (!started) return;
     touchStartY = e.touches[0].clientY;
   }, { passive: true });
 
   canvas.addEventListener('touchend', (e) => {
-    if (!started || appMode !== 'interactive') return;
+    if (!started) return;
     const touch = e.changedTouches[0];
     const dy = touchStartY - touch.clientY;
-    if (Math.abs(dy) > 50) {
-      // Swipe up/down — shift colors
-      if (dy > 0) symbInput.shiftUp = true;
-      else symbInput.shiftDown = true;
-    } else {
-      // Tap
-      handleSymbTap(touch.clientX);
+    if (appMode === 'interactive') {
+      if (Math.abs(dy) > 50) {
+        if (dy > 0) symbInput.shiftUp = true;
+        else symbInput.shiftDown = true;
+      } else {
+        handleSymbTap(touch.clientX);
+      }
+    } else if (appMode === 'garden') {
+      handleGardenTap(touch.clientX, touch.clientY);
     }
   });
 
   canvas.addEventListener('click', (e) => {
-    if (!started || appMode !== 'interactive') return;
-    handleSymbTap(e.clientX);
+    if (!started) return;
+    if (appMode === 'interactive') {
+      handleSymbTap(e.clientX);
+    } else if (appMode === 'garden') {
+      handleGardenTap(e.clientX, e.clientY);
+    }
   });
+
+  // Garden: tap to move cursor and plant
+  function handleGardenTap(x, y) {
+    if (typeof gardenOffsetX === 'undefined') return;
+    const col = Math.floor((x - gardenOffsetX) / gardenCellSize);
+    const row = Math.floor((y - gardenOffsetY) / gardenCellSize);
+    if (col >= 0 && col < gardenCols && row >= 0 && row < gardenRows) {
+      gardenCursorX = col;
+      gardenCursorY = row;
+      gardenInput.plant = true;
+    }
+  }
 }
