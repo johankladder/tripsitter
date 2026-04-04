@@ -14,11 +14,11 @@ A browser-based visualizer that renders calming, psychedelic animations — perf
 
 ## Features
 
-- **Two modes** — Choose between **Ambient** for lean-back visuals and **Interactive** for hands-on play. Pick your mode from the splash screen when you launch.
+- **Three modes** — Choose between **Ambient** for lean-back visuals, **Symbiosis** for interactive play, and **Garden** for a meditative planting experience. Pick your mode from the splash screen.
 - **12 handcrafted scenes** — Deep ocean, cosmos, mandala, liquid, waves, kaleidoscope, fireflies, spiral, rain, ink, mycelium, and threads. Each one is unique with organic, noise-driven animations.
 - **10 color moods** — Ocean, aurora, ember, dream, forest, sunset, ice, neon, midnight, and rose. Moods transition smoothly so the vibe never breaks.
 - **Auto mode** — Sit back and let scenes and moods cycle automatically.
-- **Chromecast support** — Cast directly to your TV. Use D-pad controls to navigate scenes and moods. Long-press Enter to switch between ambient and interactive modes on the TV.
+- **Chromecast support** — Cast directly to your TV. Use D-pad controls to navigate scenes and moods. Changes sync both ways between your phone and the TV. Long-press Enter to return to the splash screen.
 - **Fullscreen** — One click for a distraction-free experience.
 - **Zero setup** — No installs, no accounts, no dependencies. Just open the link and go.
 
@@ -31,29 +31,33 @@ A browser-based visualizer that renders calming, psychedelic animations — perf
   <img src="images/fireflies.jpg" width="49%" alt="Fireflies scene">
 </p>
 
-### Interactive modes
+### Symbiosis
 
-- **Symbiosis** — Two living organisms compete for energy on opposite sides of the screen. Feed them, trigger blooms, and watch their tendrils reach toward each other. Tap left or right to feed, swipe to shift colors, double-tap to bloom.
-- **Constellation** — Draw with light. Move a cursor across the canvas to place points that connect into constellations, leaving glowing trails behind.
+Two living organisms compete for energy on opposite sides of the screen. Feed them, trigger blooms, and watch their tendrils reach toward each other. Tap left or right to feed, swipe to shift colors, double-tap to bloom.
 
 <p align="center">
   <img src="images/symbiosis.gif" width="100%" alt="Symbiosis interactive mode">
 </p>
 
+### Garden
+
+Plant seeds on a grid and watch them grow into blooms with five distinct shapes — petals, spirals, stars, dandelions, and lotuses. Blooms spread tendrils to neighbors, burst into spores that seed new life, and eventually fade away. No goals, no fail state — just grow things.
+
 ## How to use
 
 1. Open the [live site](https://johankladder.github.io/tripsitter/)
-2. Choose a mode — **Ambient** or **Interactive**
+2. Choose a mode — **Ambient**, **Symbiosis**, or **Garden**
 3. **Ambient:** Pick a scene and mood from the bottom panel, or enable auto mode and let it surprise you
-4. **Interactive:** Use keyboard arrows or touch to interact with the visuals
-5. Go fullscreen for the best experience
-6. Optional: cast to your TV using the Chromecast button
+4. **Symbiosis:** Use keyboard arrows or touch to feed organisms and trigger blooms
+5. **Garden:** Move the cursor with arrows and press Enter/Space to plant seeds
+6. Go fullscreen for the best experience
+7. Optional: cast to your TV using the Chromecast button
 
 The UI auto-hides after a few seconds so nothing gets in the way.
 
 ## Tech
 
-Pure vanilla JavaScript and Canvas 2D — no frameworks, no build step, no dependencies. The entire app is under 105 KB uncompressed.
+Pure vanilla JavaScript and Canvas 2D — no frameworks, no build step, no dependencies.
 
 ## Support
 
