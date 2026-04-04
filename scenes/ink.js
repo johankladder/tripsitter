@@ -240,20 +240,30 @@ function drawInk(t, dt) {
         const steps = 25;
         const tendrilOp = Math.min(1, op) * 0.1 * (1 - fadeProgress * 0.5);
 
-        ctx.beginPath();
+        const pts = [];
         let tx = d.cx + Math.cos(lb.angle) * currentR * 0.3;
         let ty = d.cy + Math.sin(lb.angle) * currentR * 0.3;
-        ctx.moveTo(tx, ty);
+        pts.push({ x: tx, y: ty });
 
         let angle = lb.angle;
         for (let si = 1; si <= steps; si++) {
           const st = si / steps;
-          const tn = noise2D(lb.nOff + st * 4, time * 0.06 + ti);
-          angle += tn * 1.2;
+          const tn = noise2D(lb.nOff + st * 3, time * 0.06 + ti);
+          angle += tn * 0.6;
           tx += Math.cos(angle) * (tendrilLen / steps);
           ty += Math.sin(angle) * (tendrilLen / steps);
-          ctx.lineTo(tx, ty);
+          pts.push({ x: tx, y: ty });
         }
+
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let si = 1; si < pts.length - 1; si++) {
+          const xc = (pts[si].x + pts[si + 1].x) / 2;
+          const yc = (pts[si].y + pts[si + 1].y) / 2;
+          ctx.quadraticCurveTo(pts[si].x, pts[si].y, xc, yc);
+        }
+        const last = pts[pts.length - 1];
+        ctx.lineTo(last.x, last.y);
 
         ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${tendrilOp})`;
         ctx.lineWidth = 1.5 + (1 - tendrilProgress) * 3.5;
@@ -280,19 +290,29 @@ function drawInk(t, dt) {
           const microLen = currentR * 0.6 * microProgress;
           const microOp = Math.min(1, op) * 0.05;
 
-          ctx.beginPath();
+          const mPts = [];
           let mx = d.cx + Math.cos(midAngle) * currentR * 0.5;
           let my = d.cy + Math.sin(midAngle) * currentR * 0.5;
-          ctx.moveTo(mx, my);
+          mPts.push({ x: mx, y: my });
 
           let ma = midAngle;
           for (let si = 1; si <= 12; si++) {
             const st = si / 12;
-            ma += noise2D(lb.nOff + 50 + st * 3, time * 0.04) * 0.9;
+            ma += noise2D(lb.nOff + 50 + st * 3, time * 0.04) * 0.5;
             mx += Math.cos(ma) * (microLen / 12);
             my += Math.sin(ma) * (microLen / 12);
-            ctx.lineTo(mx, my);
+            mPts.push({ x: mx, y: my });
           }
+
+          ctx.beginPath();
+          ctx.moveTo(mPts[0].x, mPts[0].y);
+          for (let si = 1; si < mPts.length - 1; si++) {
+            const xc = (mPts[si].x + mPts[si + 1].x) / 2;
+            const yc = (mPts[si].y + mPts[si + 1].y) / 2;
+            ctx.quadraticCurveTo(mPts[si].x, mPts[si].y, xc, yc);
+          }
+          const mLast = mPts[mPts.length - 1];
+          ctx.lineTo(mLast.x, mLast.y);
           ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${microOp})`;
           ctx.lineWidth = 0.8;
           ctx.stroke();
